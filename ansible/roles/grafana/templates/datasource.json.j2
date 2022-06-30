@@ -1,0 +1,15 @@
+[
+{% for item in grafana_datasources %}
+  {
+    "id": {{ loop.index }},
+    "name": "{{ item.name }}",
+    "type": "{{ item.type }}",
+    "url": "{{ item.url_protocol }}://{{ item.url }}",
+    "access": "proxy",
+    "basicAuth": {{ item.basicauth }},
+    "basicAuthUser": "{{ item.basicauth_user }}",
+    "basicAuthPassword": "{{ item.basicauth_password }}",
+    "isDefault": {{ item.default }}
+  }{% if loop.index != loop.length %},{% endif %}
+{% endfor %}
+]

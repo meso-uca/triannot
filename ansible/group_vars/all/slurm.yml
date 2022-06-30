@@ -1,0 +1,7 @@
+---
+
+# master_name: toto-master
+# node_prefix: toto
+# node_max: 42
+# node_ram_mb: 128000
+# node_sockets: 32

@@ -1,0 +1,1200 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<analysis triannot_version="5.3p02" description="wheat_step220621_withFuncAnnot.xml - TriAnnot workflow with Blast legacy for Mesocentre UCA Web site - structural/syntaxique and functional annotation -  June 21th, 2022 - P Leroy">
+<!-- GFF= GFF file name - EMBL: Key (<=15) - GV: GenomeView track name (<=13) -->
+<!-- TriAnnot VM package version: TriAnnotPackage-Wheat-v6.3 @ Mesocentre UCA Clermont-Ferrand-->
+
+<!-- Panel 0 -->
+	<!-- Low complexity -->
+	<program id="1" step="0" type="RepeatMasker" sequence="initial"> <!-- GFF= 0_REPEATMASKER_SPESQnuc.gff - EMBL: RM_SPESQnuc - GV: rpmLowComp -->
+		<parameter name="database">SPESQnuc</parameter>
+		<parameter name="speed">qq</parameter>
+		<parameter name="cutoff">100</parameter>
+		<parameter name="mask_low_complexity">yes</parameter>
+		<parameter name="mask_small_rna">no</parameter>
+		<parameter name="nbCore">1</parameter>
+	</program>
+		<!-- *** Masking Low Complexity *** -->
+	<program id="2" step="0" type="SequenceMasker" sequence="initial"> <!-- Global N_masked SPESQnuc - LowComp_Nmask.seq -->
+		<dependences>
+			<dependence id="above" type="RepeatMasker"/>
+		</dependences>
+		<parameter name="masked_sequence">LowComp_Nmask.seq</parameter>
+		<parameter name="masking_mode">use_masking_letter</parameter> <!-- by default N -->
+		<parameter name="input_type">GFF</parameter>
+		<parameter name="input_file">0_REPEATMASKER_SPESQnuc.gff</parameter>
+		<parameter name="feature_type">repeat_region</parameter>
+	</program>
+
+	<!-- Vector & E. coli contamination -->
+	<program id="3" step="0" type="RepeatMasker" sequence="LowComp_Nmask.seq"> <!-- GFF= 0_REPEATMASKER_ECOgeno.gff - EMBL: RM_ECOgeno - GV: rpmEcoGeno -->
+		<parameter name="database">ECOgeno</parameter>
+		<parameter name="speed">qq</parameter>
+		<parameter name="cutoff">250</parameter>
+		<parameter name="mask_low_complexity">no</parameter>
+		<parameter name="mask_small_rna">no</parameter>
+		<parameter name="nbCore">1</parameter> 
+	</program>
+	<program id="4" step="0" type="RepeatMasker" sequence="LowComp_Nmask.seq"> <!-- GFF= 0_REPEATMASKER_UNIVEnuc.gff - EMBL: RM_UNIVEnuc - GV: rpmUNIVEnuc -->
+		<parameter name="database">UNIVEnuc</parameter>
+		<parameter name="speed">qq</parameter>
+		<parameter name="cutoff">250</parameter>
+		<parameter name="mask_low_complexity">no</parameter>
+		<parameter name="mask_small_rna">no</parameter>
+		<parameter name="nbCore">1</parameter> 
+	</program>
+		<!-- *** Masking Contamination *** -->
+	<program id="5" step="0" type="SequenceMasker" sequence="LowComp_Nmask.seq"> <!-- Global N_masked UNIVEnuc ECOgeno - vec_LowComp_Nmask.seq -->
+		<dependences>
+			<dependence id="3" type="RepeatMasker"/>
+			<dependence id="4" type="RepeatMasker"/>
+		</dependences>
+		<parameter name="masked_sequence">vec_LowComp_Nmask.seq</parameter>
+		<parameter name="masking_mode">use_masking_letter</parameter> <!-- by default N -->
+		<parameter name="input_type">GFF</parameter>
+		<parameter name="input_file">0_REPEATMASKER_UNIVEnuc.gff</parameter>
+		<parameter name="input_file">0_REPEATMASKER_ECOgeno.gff</parameter>
+		<parameter name="feature_type">repeat_region</parameter>
+	</program>
+
+<!-- Panel II -->
+	<!-- Repeats for clariTE and for ISBPfinder -->
+	<program id="18" step="2" type="RepeatMasker" sequence="vec_LowComp_Nmask.seq"> <!-- GFF= 2_REPEATMASKER_CLARIrepeatwheat.gff - EMBL: RM_clariTE - GV: repeatClariTE -->
+		<parameter name="EMBLRename.repeat_region">RM_clariTE</parameter>
+		<parameter name="database">CLARIrepeatwheat</parameter>
+		<parameter name="speed">qq</parameter>
+		<parameter name="cutoff">250</parameter>
+		<parameter name="mask_low_complexity">no</parameter>
+		<parameter name="mask_small_rna">no</parameter>
+		<parameter name="nbCore">1</parameter> 
+	</program>
+		<!-- *** Masking TEs based on ClariTE *** -->
+	<program id="19" step="2" type="SequenceMasker" sequence="vec_LowComp_Nmask.seq"> <!-- Global N_masked TE_Nmask.seq -->
+		<dependences>
+			<dependence id="18" type="RepeatMasker"/>
+		</dependences>
+		<parameter name="masked_sequence">TE_Nmask.seq</parameter>
+		<parameter name="masking_mode">use_masking_letter</parameter> <!-- by default N -->
+		<parameter name="input_file">2_REPEATMASKER_CLARIrepeatwheat.xm</parameter>
+		<parameter name="input_type">XM</parameter>
+		<parameter name="generate_IG_file">no</parameter>
+		<parameter name="remove_simple_XM_files">no</parameter>
+		<parameter name="generate_global_XM_file">no</parameter>
+	</program>	
+	<program id="20" step="2" type="SequenceMasker" sequence="vec_LowComp_Nmask.seq"> <!-- Global LC_masked TE_LCmask.seq -->
+		<dependences>
+			<dependence id="18" type="RepeatMasker"/>
+		</dependences>
+		<parameter name="masked_sequence">TE_LCmask.seq</parameter>
+		<parameter name="masking_mode">convert_to_lowercase</parameter> 
+		<parameter name="input_file">2_REPEATMASKER_CLARIrepeatwheat.xm</parameter>
+		<parameter name="input_type">XM</parameter>
+		<parameter name="generate_IG_file">yes</parameter>
+		<parameter name="remove_simple_XM_files">no</parameter>
+		<parameter name="generate_global_XM_file">yes</parameter>
+	</program>	
+
+	<!-- ClariTE -->
+	<program id="21" step="2" type="ClariTE" sequence="vec_LowComp_Nmask.seq"> <!-- GFF= 2_CLARITE_CLARIrepeatwheat.gff WITH GeneModels - EMBL: RM_clariTE - GV: clariTE -->
+		<dependences>
+			<dependence id="18" type="RepeatMasker"/>
+			<dependence id="208" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="database">CLARIrepeatwheat</parameter>
+		<parameter name="RepeatMaskerXmFile">2_REPEATMASKER_CLARIrepeatwheat.xm</parameter>
+		<parameter name="useGeneModelData">yes</parameter>
+		<parameter name="geneModelEmblFile">9_GENEMODEL.embl</parameter>
+	</program>
+
+<!-- Panel III -->
+	<!-- ab initio -->
+	<program id="24" step="3" type="Augustus" sequence="TE_Nmask.seq"> <!-- GFF= 3_AUGUSTUS_wheat.gff - EMBL: AUGUSTUS_wheat - GV: AugustusWheat -->
+		<!-- needs the true name of the folder species find in Augsutus config folder and the path -->
+		<dependences>
+			<!--dependence id="32" /--> <!-- Exonerate RNAseq execution -->
+			<!--dependence id="122" /--> <!-- Exonerate TRITprot execution -->
+		</dependences>
+		<parameter name="matrix">wheat</parameter>
+		<parameter name="strand">both</parameter>
+		<parameter name="genemodel_type">complete</parameter>
+		<parameter name="singlestrand">false</parameter>
+		<parameter name="predict_utr">off</parameter>
+		<parameter name="output_protein">off</parameter>
+		<parameter name="output_introns">off</parameter>
+		<parameter name="output_start">off</parameter>
+		<parameter name="output_stop">off</parameter>
+		<parameter name="output_cds">on</parameter>
+		<parameter name="output_codingseq">off</parameter>
+		
+		<parameter name="use_hints">off</parameter>
+		<!--parameter name="RNAseqHintsFile">4_EXONERATE_TAErnaseq.gff</parameter-->
+		<!--parameter name="proteinHintsFile">5_EXONERATE_TRITprot.gff</parameter-->
+		<!--parameter name="extrinsicConfigFile">/home/banks3b/matrices/extrinsic.rnaSeqAndProt.cfg</parameter-->	
+	</program>
+	<program id="25" step="3" type="FgeneSH" sequence="TE_Nmask.seq"> <!-- GFF= 3_FGENESH.gff - EMBL: FGeneSH - GV: FGENESH ::: wheat matrix -->
+		<parameter name="matrix">Wheat</parameter>
+	</program>		
+
+	<!-- previous wheat genome annotations -->
+		<!-- IWGSC CDS RefSeq v2.1 -->
+	<program id="33" step="4" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 4_EXONERATE_TAEcdsIWGSCv2.gff - EMBL: ExoN_TAErefSeq - GV: nTAErefseq2_1 - v1.1 -->
+		<parameter name="type">BLASTN</parameter>
+		<parameter name="database">TAEcdsIWGSCv2</parameter> 
+		<parameter name="evalue">1e-3</parameter>
+		<parameter name="identity_threshold">0.65</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+		<parameter name="hitListFile">TAEcdsIWGSCv2_Hit_list.txt</parameter> 
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="34" step="4" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">TAEcdsIWGSCv2</parameter>
+		<parameter name="databaseType">dna</parameter>
+		<parameter name="hitListFile">TAEcdsIWGSCv2_Hit_list.txt</parameter> 
+		<parameter name="minibank_name">Mini_BLASTN_TAEcdsIWGSCv2</parameter>
+	</program>	
+	<program id="35" step="4" type="Exonerate" sequence="TE_Nmask.seq"> 
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoN_TAErefSeq</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTN_{database}</parameter>
+		<parameter name="database">TAEcdsIWGSCv2</parameter>
+		<parameter name="queryType">dna</parameter>
+		<parameter name="model">est2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTN_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.85</parameter>
+		</program>	
+
+	<!-- Biological Evidences - Exonerate for BLASTn against Transcripts (FL-cDNA, ESTs and nucleic sequences) -->
+		<!-- Species FL-cDNA -->
+	<program id="50" step="4" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 4_EXONERATE_TRITfcdnaplus.gff - EMBL: ExoN_TRITfcdna - GV: nTRITflcdna -->
+		<parameter name="type">BLASTN</parameter>
+		<parameter name="database">TRITfcdnaplus</parameter>
+		<parameter name="evalue">1e-3</parameter>
+		<parameter name="identity_threshold">0.65</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">TRITfcdnaplus_Hit_list.txt</parameter> 
+		<parameter name="nbCore">2</parameter> 
+	</program>	
+	<program id="51" step="4" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">TRITfcdnaplus</parameter>
+		<parameter name="databaseType">dna</parameter>
+		<parameter name="hitListFile">TRITfcdnaplus_Hit_list.txt</parameter> 
+		<parameter name="minibank_name">Mini_BLASTN_TRITfcdnaplus</parameter>
+	</program>	
+	<program id="52" step="4" type="Exonerate" sequence="TE_Nmask.seq"> 
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/> 
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoN_TRITfcdna</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTN_{database}</parameter>
+		<parameter name="database">TRITfcdnaplus</parameter>
+		<parameter name="queryType">dna</parameter>
+		<parameter name="model">est2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTN_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.75</parameter>
+	</program>
+		<!-- Species ESTs comming - ENA download under process -->
+
+		<!-- RNA-Seq assembly -->
+	<program id="60" step="4" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 4_EXONERATE_TAErnaseqNRgene.gff - EMBL: ExoN_TAErnaNRge - GV: nTAErsqNRg -->
+		<parameter name="type">BLASTN</parameter>
+		<parameter name="database">TAErnaseqNRgene</parameter>
+		<parameter name="evalue">1e-3</parameter>
+		<parameter name="identity_threshold">0.65</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">TAErnaseqNRgene_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>	
+	<program id="61" step="4" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast" /> 
+		</dependences>
+		<parameter name="database">TAErnaseqNRgene</parameter>
+		<parameter name="databaseType">dna</parameter>
+		<parameter name="hitListFile">TAErnaseqNRgene_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTN_TAErnaseqNRgene</parameter>
+	</program>	
+	<program id="62" step="4" type="Exonerate" sequence="TE_Nmask.seq"> 
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoN_TAErnaNRge</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTN_{database}</parameter>
+		<parameter name="database">TAErnaseqNRgene</parameter>
+		<parameter name="queryType">dna</parameter>
+		<parameter name="model">est2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTN_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.75</parameter>
+	</program>	
+
+	<program id="63" step="4" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 4_EXONERATE_TAErnaseqDong.gff - EMBL: ExoN_TAErnaDong - GV: nTAErsqDon -->
+		<parameter name="type">BLASTN</parameter>
+		<parameter name="database">TAErnaseqDong</parameter>
+		<parameter name="evalue">1e-3</parameter>
+		<parameter name="identity_threshold">0.65</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">TAErnaseqDong_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>	
+	<program id="64" step="4" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast" /> 
+		</dependences>
+		<parameter name="database">TAErnaseqDong</parameter>
+		<parameter name="databaseType">dna</parameter>
+		<parameter name="hitListFile">TAErnaseqDong_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTN_TAErnaseqDong</parameter>
+	</program>	
+	<program id="65" step="4" type="Exonerate" sequence="TE_Nmask.seq"> 
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoN_TAErnaDong</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTN_{database}</parameter>
+		<parameter name="database">TAErnaseqDong</parameter>
+		<parameter name="queryType">dna</parameter>
+		<parameter name="model">est2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTN_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.75</parameter>
+	</program>	
+
+	<program id="66" step="4" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 4_EXONERATE_TAErnaseqEarlhamIsoSeq.gff - EMBL: ExoN_TAErnaIso - GV: nTAErsqEis -->
+		<parameter name="type">BLASTN</parameter>
+		<parameter name="database">TAErnaseqEarlhamIsoSeq</parameter>
+		<parameter name="evalue">1e-3</parameter>
+		<parameter name="identity_threshold">0.65</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">TAErnaseqEarlhamIsoSeq_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>	
+	<program id="67" step="4" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast" /> 
+		</dependences>
+		<parameter name="database">TAErnaseqEarlhamIsoSeq</parameter>
+		<parameter name="databaseType">dna</parameter>
+		<parameter name="hitListFile">TAErnaseqEarlhamIsoSeq_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTN_TAErnaseqEarlhamIsoSeq</parameter>
+	</program>	
+	<program id="68" step="4" type="Exonerate" sequence="TE_Nmask.seq"> 
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoN_TAErnaIso</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTN_{database}</parameter>
+		<parameter name="database">TAErnaseqEarlhamIsoSeq</parameter>
+		<parameter name="queryType">dna</parameter>
+		<parameter name="model">est2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTN_</parameter>
+		<parameter name="bestn">100</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.75</parameter>
+	</program>	
+
+	<!-- Biological Evidences - Exonerate for BLASTx against proteins --> 
+	<!-- pep : peptides derived from annotated CDS -->
+	<program id="106" step="5" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 5_EXONERATE_ATApepEnsemblMeth.gff - EMBL: ExoX_ATApeEnMth - GV: xATApepEnMth -->
+		<parameter name="type">BLASTX</parameter>
+		<parameter name="database">ATApepEnsemblMeth</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="identity_threshold">0.40</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">ATApepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="107" step="5" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">ATApepEnsemblMeth</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">ATApepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTX_ATApepEnsemblMeth</parameter>
+	</program>
+	<program id="108" step="5" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoX_ATApeEnMth</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTX_{database}</parameter>
+		<parameter name="database">ATApepEnsemblMeth</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTX_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+	</program>
+
+	<program id="109" step="5" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 5_EXONERATE_BDIpepEnsemblMeth.gff - EMBL: ExoX_BDIpeEnMth - GV: xBDIpepEnMth -->
+		<parameter name="type">BLASTX</parameter>
+		<parameter name="database">BDIpepEnsemblMeth</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="identity_threshold">0.40</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">BDIpepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="110" step="5" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">BDIpepEnsemblMeth</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">BDIpepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTX_BDIpepEnsemblMeth</parameter>
+	</program>
+	<program id="111" step="5" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoX_BDIpeEnMth</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTX_{database}</parameter>
+		<parameter name="database">BDIpepEnsemblMeth</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTX_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+	</program>
+
+	<program id="112" step="5" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 5_EXONERATE_HVUpepEnsemblMeth.gff - EMBL: ExoX_HVUpepEnMth - GV: xHVUpepEnMth -->
+		<parameter name="type">BLASTX</parameter>
+		<parameter name="database">HVUpepEnsemblMeth</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="identity_threshold">0.40</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">HVUpepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="113" step="5" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">HVUpepEnsemblMeth</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">HVUpepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTX_HVUpepEnsemblMeth</parameter>
+	</program>
+	<program id="114" step="5" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoX_HVUpeEnMth</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTX_{database}</parameter>
+		<parameter name="database">HVUpepEnsemblMeth</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTX_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+	</program>
+
+	<program id="115" step="5" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 5_EXONERATE_OSApepEnsemblMeth.gff - EMBL: ExoX_OSApeEnMth - GV: xOSApepEnMth -->
+		<parameter name="type">BLASTX</parameter>
+		<parameter name="database">OSApepEnsemblMeth</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="identity_threshold">0.40</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">OSApepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="116" step="5" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">OSApepEnsemblMeth</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">OSApepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTX_OSApepEnsemblMeth</parameter>
+	</program>
+	<program id="117" step="5" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoX_OSApeEnMth</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTX_{database}</parameter>
+		<parameter name="database">OSApepEnsemblMeth</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTX_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+	</program>
+
+	<program id="118" step="5" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 5_EXONERATE_SBIpepEnsemblMeth.gff - EMBL: ExoX_SBIpeEnMth - GV: xSBIpepEnMth -->
+		<parameter name="type">BLASTX</parameter>
+		<parameter name="database">SBIpepEnsemblMeth</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="identity_threshold">0.40</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">SBIpepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="119" step="5" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">SBIpepEnsemblMeth</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">SBIpepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTX_SBIpepEnsemblMeth</parameter>
+	</program>
+	<program id="120" step="5" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoX_SBIpeEnMth</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTX_{database}</parameter>
+		<parameter name="database">SBIpepEnsemblMeth</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTX_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+	</program>
+
+	<program id="121" step="5" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 5_EXONERATE_SITpepEnsembl.gff - EMBL: ExoX_SITpepEsem - GV: xSITpepEn -->
+		<parameter name="type">BLASTX</parameter>
+		<parameter name="database">SITpepEnsembl</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="identity_threshold">0.40</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">SITpepEnsembl_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="122" step="5" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">SITpepEnsembl</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">SITpepEnsembl_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTX_SITpepEnsembl</parameter>
+	</program>
+	<program id="123" step="5" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoX_SITpepEsem</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTX_{database}</parameter>
+		<parameter name="database">SITpepEnsembl</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTX_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+	</program>
+
+	<program id="124" step="5" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 5_EXONERATE_TAEpepIWGSCrefseqFunc.gff - EMBL: ExoX_TAEpepRefS - GV: xTAEpepRSfunc -->
+		<parameter name="type">BLASTX</parameter>
+		<parameter name="database">TAEpepIWGSCrefseqFunc</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="identity_threshold">0.40</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">TAEpepIWGSCrefseqFunc_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="125" step="5" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">TAEpepIWGSCrefseqFunc</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">TAEpepIWGSCrefseqFunc_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTX_TAEpepIWGSCrefseqFunc</parameter>
+	</program>
+	<program id="126" step="5" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoX_TAEpepRefS</parameter>
+		<parameter name="sourceTag">EXONERATE_BLASTX_{database}</parameter>
+		<parameter name="database">TAEpepIWGSCrefseqFunc</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTX_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+	</program>
+
+	<program id="127" step="5" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 5_EXONERATE_TURpepEnsemblMeth.gff - EMBL: ExoX_TURpeEnMth - GV: xTURpepEnMth -->
+		<parameter name="type">BLASTX</parameter>
+		<parameter name="database">TURpepEnsemblMeth</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="identity_threshold">0.40</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">TURpepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="128" step="5" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">TURpepEnsemblMeth</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">TURpepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTX_TURpepEnsemblMeth</parameter>
+	</program>
+	<program id="129" step="5" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoX_TURpeEnMth</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTX_{database}</parameter>
+		<parameter name="database">TURpepEnsemblMeth</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTX_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+	</program>
+
+	<program id="130" step="5" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 5_EXONERATE_TDIpepEnsemblMeth.gff - EMBL: ExoX_TDIpeEnMth - GV: xTDIpepEnMth -->
+		<parameter name="type">BLASTX</parameter>
+		<parameter name="database">TDIpepEnsemblMeth</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="identity_threshold">0.40</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">TDIpepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="131" step="5" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">TDIpepEnsemblMeth</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">TDIpepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTX_TDIpepEnsemblMeth</parameter>
+	</program>
+	<program id="132" step="5" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoX_TDIpeEnMth</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTX_{database}</parameter>
+		<parameter name="database">TDIpepEnsemblMeth</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTX_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+	</program>
+
+	<program id="133" step="5" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 5_EXONERATE_ZMApepEnsemblMeth.gff - EMBL: ExoX_ZMApeEnMth - GV: xZMApepEnMth -->
+		<parameter name="type">BLASTX</parameter>
+		<parameter name="database">ZMApepEnsemblMeth</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="identity_threshold">0.40</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+		<parameter name="hitListFile">ZMApepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="134" step="5" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">ZMApepEnsemblMeth</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">ZMApepEnsemblMeth_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTX_ZMApepEnsemblMeth</parameter>
+	</program>
+	<program id="135" step="5" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoX_ZMApeEnMth</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTX_{database}</parameter>
+		<parameter name="database">ZMApepEnsemblMeth</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTX_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.60</parameter>
+	</program>
+
+	<!-- BLASTx-Exonerate for GeneModel -->
+	<program id="140" step="5" type="Blast" sequence="TE_Nmask.seq"> <!-- GFF= 5_EXONERATE_RefPepMethForWheatPipe.gff - EMBL: ExoX_RefPMFwht - GV: xRefPMFwheat - see merge.pl: genome protein annotation only : ATApepEnsemblASM34733_v1, BDIpepEnsembl_v1, HVUpepEnsemblPGSB_v2, OSApepEnsemblIRGSP_v1, SBIpepEnsemblNCBI_v3, SITpepEnsemblJGI_v2, TURpepEnsemblASM34745_v1 and ZMApepEnsemblAGP_v4 -->
+		<parameter name="type">BLASTX</parameter>
+		<parameter name="database">RefPepMethForWheatPipe</parameter>
+		<parameter name="evalue">1e-5</parameter>
+		<parameter name="identity_threshold">0.60</parameter>
+		<parameter name="coverageThreshold">0.70</parameter>
+		<parameter name="hitListFile">RefPepMethForWheatPipe_Hit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="141" step="5" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="Blast"/>
+		</dependences>
+		<parameter name="database">RefPepMethForWheatPipe</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">RefPepMethForWheatPipe_Hit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTX_RefPepMethForWheatPipe</parameter>
+	</program>
+	<program id="142" step="5" type="Exonerate" sequence="TE_Nmask.seq"> 
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoX_RefPMFwht</parameter> 
+		<parameter name="sourceTag">EXONERATE_BLASTX_{database}</parameter>
+		<parameter name="database">RefPepMethForWheatPipe</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTX_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.70</parameter>
+	</program>
+
+	<!-- STRUCTURAL ANNOTATION -->
+	<!-- Gene Model building -->
+	<program id="201" step="6" type="SIMsearch" sequence="TE_LCmask.seq"> <!-- GFF= 6_SIMsearch_CAT01_TRITfcdnaplus.gff - EMBL: CDS_CAT01 - GV: SIMsearchCat1 - FL-cDNA Triticum  - TRITfcdnaplus -->
+		<dependences>
+			<dependence id="24" type="Augustus"/>
+		</dependences>
+		<parameter name="transcriptsDb">TRITfcdnaplus</parameter> 
+		<parameter name="proteinDb">RefPepMethForWheatPipe</parameter> 
+		<parameter name="abinitioGff">3_AUGUSTUS_wheat.gff</parameter>
+		<parameter name="autoannot.PRIORITY">CV_NA,ORF_LEN,ID_AA,ID_NA,RANGE,EXON,CAT</parameter>
+		<parameter name="autoannot.CATEGORY">CAT01</parameter>
+		<parameter name="map.ID_HSP">0.80</parameter>
+		<parameter name="map.CV_HIT">0.90</parameter>
+		<parameter name="map.ID_FIN">0.80</parameter>
+		<parameter name="map.CV_FIN">0.90</parameter>
+		<parameter name="orf.MIN_ID">0.80</parameter>
+		<parameter name="orf.MIN_AA">50</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="203" step="6" type="SIMsearch" sequence="TE_LCmask.seq"> <!-- GFF= 6_SIMsearch_CAT03_SIMDBwheat.gff - CAT03 - EMBL: CDS_CAT03 - GV: SIMsearchCat3 - SIMnuc = annotated CDS from ATAcdsEnsemblASM34733_v1, BDIcdsEnsembl_v1, HVUcdsEnsemblPGSB_v2, OSAcdsEnsemblIRGSP_v1, SBIcdsEnsemblNCBI_v3, SITcdsEnsemblJGI_v2, TURcdsEnsemblASM34745_v1 and ZMAcdsEnsemblAGP_v4 -->
+		<dependences>
+			<dependence id="24" type="Augustus"/>
+		</dependences>
+		<parameter name="transcriptsDb">SIMDBwheat</parameter> 
+		<parameter name="proteinDb">RefPepMethForWheatPipe</parameter> 
+		<parameter name="abinitioGff">3_AUGUSTUS_wheat.gff</parameter>
+		<parameter name="autoannot.PRIORITY">CV_NA,ORF_LEN,ID_AA,ID_NA,RANGE,EXON,CAT</parameter>
+		<parameter name="autoannot.CATEGORY">CAT03</parameter>
+		<parameter name="map.ID_HSP">0.70</parameter>
+		<parameter name="map.CV_HIT">0.90</parameter>
+		<parameter name="map.ID_FIN">0.70</parameter>
+		<parameter name="map.CV_FIN">0.90</parameter>
+		<parameter name="orf.MIN_ID">0.60</parameter>
+		<parameter name="orf.MIN_AA">50</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+
+	<!-- MERGE - best Gene Model - PseudoGenes Class I -->
+	<program id="205" step="7" type="MergeGeneModels" sequence="initial"> <!-- GFF= 7_MERGE.gff -->
+		<dependences>
+			<dependence id="24" type="Augustus"/>    <!-- 3_AUGUSTUS_wheat -->
+			<dependence id="25" type="FgeneSH"/>     <!-- 3_FGENESH -->
+
+			<dependence id="52" type="Exonerate"/>   <!-- 4_EXONERATE_TRITfcdnaplus -->
+
+			<dependence id="62" type="Exonerate"/>   <!-- 4_EXONERATE_TAErnaseqNRgene -->
+			<dependence id="65" type="Exonerate"/>   <!-- 4_EXONERATE_TAErnaseqDong -->
+			<dependence id="68" type="Exonerate"/>   <!-- 4_EXONERATE_TAErnaseqEarlhamIsoSeq -->
+
+			<dependence id="111" type="Exonerate"/>  <!-- 5_EXONERATE_BDIpepEnsemblMeth -->
+			<dependence id="114" type="Exonerate"/>  <!-- 5_EXONERATE_HVUpepEnsemblMeth -->
+			<dependence id="117" type="Exonerate"/>  <!-- 5_EXONERATE_OSApepEnsemblMeth -->
+			<dependence id="120" type="Exonerate"/>  <!-- 5_EXONERATE_SBIpepEnsemblMeth -->
+			<dependence id="135" type="Exonerate"/>  <!-- 5_EXONERATE_ZMApepEnsemblMeth -->
+
+			<dependence id="142" type="Exonerate"/>  <!-- 5_EXONERATE_RefPepMethForWheatPipe -->
+
+			<dependence id="201" type="SIMsearch"/>  <!-- 6_SIMsearch_CAT01_TRITfcdnaplus -->
+			<dependence id="203" type="SIMsearch"/>  <!-- 6_SIMsearch_CAT03_SIMDBwheat -->
+		</dependences>
+		<!-- First check if the protein derived from the predicted gene model has a hit or could be a pseudogene - if no hit MERGE doesn't go further -->
+		<!-- This BLASTp will be also used to check the protein start codon (Meth) -->
+		<parameter name="database">POACprotNtaeMeth</parameter> <!-- Poaceae family proteom without T. aestivum non redundant -->
+
+		<parameter name="addBlastpFileTag">no</parameter>
+		<parameter name="addFastaFileTag">no</parameter>
+		<parameter name="moveBlastResultsToEmblDirectory">no</parameter>
+		<parameter name="moveProteinFastaToEmblDirectory">no</parameter>
+
+		<!-- special behavior for model genes coming from already curated proteins -->
+		<!-- <parameter name="manuallyCuratedPrediction">GFFfile</parameter> -->
+
+		<!-- Gene Model Predictions to compare -->
+			<!-- Gene Model based on prediction only -->
+		<parameter name="automaticPredictions">3_AUGUSTUS_wheat.gff</parameter>
+		<parameter name="automaticPredictions">3_FGENESH.gff</parameter>
+
+			<!-- Gene Model based on BLASTx-Exonerate only -->
+		<parameter name="automaticPredictions">5_EXONERATE_RefPepMethForWheatPipe.gff</parameter>
+
+			<!-- Gene Model based on similarity only - SIMsearch module -->
+		<parameter name="automaticPredictions">6_SIMsearch_CAT01_TRITfcdnaplus.gff</parameter>
+		<parameter name="automaticPredictions">6_SIMsearch_CAT03_SIMDBwheat.gff</parameter>
+
+		<!-- Check gene model structures intron Acc/Do -->
+		<!-- High Quality Nucleic Biological evidences - MANDATORY -->
+		<parameter name="highQualityNucleicEvidences">4_EXONERATE_TRITfcdnaplus.gff</parameter>
+		<parameter name="highQualityNucleicEvidences">4_EXONERATE_TAErnaseqDong.gff</parameter>
+		<parameter name="highQualityNucleicEvidences">4_EXONERATE_TAErnaseqEarlhamIsoSeq.gff</parameter>
+
+		<!-- Other Nucleic Biological evidences -->
+		<parameter name="otherNucleicEvidences">4_EXONERATE_TAErnaseqNRgene.gff</parameter>
+
+		<!-- Proteic Biological evidences - MANDATORY -->
+		<parameter name="proteicEvidences">5_EXONERATE_BDIpepEnsemblMeth.gff</parameter>
+		<parameter name="proteicEvidences">5_EXONERATE_HVUpepEnsemblMeth.gff</parameter>
+		<parameter name="proteicEvidences">5_EXONERATE_OSApepEnsemblMeth.gff</parameter>
+		<parameter name="proteicEvidences">5_EXONERATE_SBIpepEnsemblMeth.gff</parameter>
+		<parameter name="proteicEvidences">5_EXONERATE_ZMApepEnsemblMeth.gff</parameter>
+
+		<!-- List of database names for expression check -->
+		<parameter name="databaseNamesForExpressionCheck">TAErnaseqRenanAtlasComplet</parameter>
+	</program>	
+
+    <!-- Protein Maker -->
+    <program id="207" step="8" type="ProteinMaker" sequence="initial">
+        <dependences>
+            <dependence id="205" type="MergeGeneModels"/>
+        </dependences>
+        <parameter name="protein_sequence_file">protein.seq</parameter>
+		<parameter name="useGeneModelData">yes</parameter>
+        <parameter name="geneModelGffFile">7_MERGE.gff</parameter>
+ 		<parameter name="rejectedTags">pseudogene</parameter>
+   </program>	
+
+	<!-- Functional Annotation on best Gene Model - WARNING check and setup FuncAnnot.xml and FuncAnnot.pm : databanks and parameters -->
+	<program id="208" step="9" type="FuncAnnot_IWGSC" sequence="protein.seq"> <!-- GFF= 9_GENEMODEL.gff -->
+		<parameter name="gff_to_annotate">7_MERGE.gff</parameter>
+
+		<parameter name="database_STEP01">SWISSprot</parameter> <!-- known function -->
+		<parameter name="database_STEP02">POACprot</parameter> <!-- putative function -->
+		<parameter name="database_STEP03">PFAMAhmm</parameter> <!-- domain containing protein -->
+		<parameter name="database_STEP04">TAErnaseqEarlhamIsoSeq</parameter> <!-- expressed sequence -->
+															        <!-- conserved unknown protein -->
+		<parameter name="database_STEP06">HVUpepEnsemblMeth</parameter>	<!-- hypothetical protein -->
+		<parameter name="nbCore">2</parameter> 
+	</program>
+
+	<!-- InterProScan - domain annotation with GO -->
+	<program id="209" step="9" type="InterProScan5" sequence="protein.seq"> <!-- GFF= 9_INTERPROSCAN5.gff - GV: PFAM / SMART / PROSITE -->
+		<dependences>
+			<dependence id="above" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="applications">Pfam</parameter>
+		<parameter name="useGeneModelData">yes</parameter>
+		<parameter name="geneModelGffFile">9_GENEMODEL.gff</parameter>
+	</program>
+
+	<!-- Exonerate for BLASTp against proteins (Best Hit) -->
+		<!-- Plant proteomes -->
+	<program id="300" step="11" type="BestHit" sequence="protein.seq"> <!-- GFF= 11_EXONERATE_SWISSprot.gff - EMBL: ExoP_SWISSprot - GV: pSWISSprot -->
+		<dependences>
+			<dependence id="208" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="database">SWISSprot</parameter>
+		<parameter name="type">BLASTP</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="positive_threshold">0.35</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+		<parameter name="hitListFile">SWISSprot_BestHit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="301" step="11" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="BestHit"/>
+		</dependences>
+		<parameter name="database">SWISSprot</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">SWISSprot_BestHit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTP_SWISSprot</parameter>
+	</program>
+	<program id="302" step="11" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoP_{database}</parameter> 
+		<parameter name="sourceTag">EXONERATE_BestHit_{database}</parameter>
+		<parameter name="database">SWISSprot</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTP_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+	</program>	
+
+	<program id="306" step="11" type="BestHit" sequence="protein.seq"> <!-- GFF= 11_EXONERATE_BUSCOprot.gff - EMBL: ExoP_BUSCOprot - GV: pBUSCOprot -->
+		<dependences>
+			<dependence id="208" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="database">BUSCOprot</parameter>
+		<parameter name="type">BLASTP</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="positive_threshold">0.35</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+		<parameter name="hitListFile">BUSCOprot_BestHit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="307" step="11" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="BestHit"/>
+		</dependences>
+		<parameter name="database">BUSCOprot</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">BUSCOprot_BestHit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTP_BUSCOprot</parameter>
+	</program>
+	<program id="308" step="11" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoP_{database}</parameter> 
+		<parameter name="sourceTag">EXONERATE_BestHit_{database}</parameter>
+		<parameter name="database">BUSCOprot</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTP_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+	</program>	
+
+	<program id="309" step="11" type="BestHit" sequence="protein.seq"> <!-- GFF= 11_EXONERATE_ARABprot.gff - EMBL: ExoP_ARABprot - GV: pARABprot -->
+		<dependences>
+			<dependence id="208" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="database">ARABprot</parameter>
+		<parameter name="type">BLASTP</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="positive_threshold">0.35</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+		<parameter name="hitListFile">ARABprot_BestHit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="310" step="11" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="BestHit"/>
+		</dependences>
+		<parameter name="database">ARABprot</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">ARABprot_BestHit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTP_ARABprot</parameter>
+	</program>
+	<program id="311" step="11" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoP_{database}</parameter> <!-- ExoP_ARABprot -->
+		<parameter name="sourceTag">EXONERATE_BestHit_{database}</parameter>
+		<parameter name="database">ARABprot</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTP_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+	</program>	
+
+	<program id="312" step="11" type="BestHit" sequence="protein.seq"> <!-- GFF= 11_EXONERATE_BRACprot.gff - EMBL: ExoP_BRACprot - GV: pBRACprot -->
+		<dependences>
+			<dependence id="208" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="database">BRACprot</parameter>
+		<parameter name="type">BLASTP</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="positive_threshold">0.35</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+		<parameter name="hitListFile">BRACprot_BestHit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="313" step="11" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="BestHit"/>
+		</dependences>
+		<parameter name="database">BRACprot</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">BRACprot_BestHit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTP_BRACprot</parameter>
+	</program>
+	<program id="314" step="11" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoP_{database}</parameter> 
+		<parameter name="sourceTag">EXONERATE_BestHit_{database}</parameter>
+		<parameter name="database">BRACprot</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTP_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+	</program>	
+
+	<program id="315" step="11" type="BestHit" sequence="protein.seq"> <!-- GFF= 11_EXONERATE_HORDprot.gff - EMBL: ExoP_HORDprot - GV: pHORDprot -->
+		<dependences>
+			<dependence id="208" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="database">HORDprot</parameter>
+		<parameter name="type">BLASTP</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="positive_threshold">0.35</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+		<parameter name="hitListFile">HORDprot_BestHit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="316" step="11" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="BestHit"/>
+		</dependences>
+		<parameter name="database">HORDprot</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">HORDprot_BestHit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTP_HORDprot</parameter>
+	</program>
+	<program id="317" step="11" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoP_{database}</parameter> 
+		<parameter name="sourceTag">EXONERATE_BestHit_{database}</parameter>
+		<parameter name="database">HORDprot</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTP_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+	</program>	
+
+	<program id="318" step="11" type="BestHit" sequence="protein.seq"> <!-- GFF= 11_EXONERATE_ORYZprot.gff - EMBL: ExoP_ORYZprot - GV: pORYZprot -->
+		<dependences>
+			<dependence id="208" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="database">ORYZprot</parameter>
+		<parameter name="type">BLASTP</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="positive_threshold">0.35</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+		<parameter name="hitListFile">ORYZprot_BestHit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="319" step="11" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="BestHit"/>
+		</dependences>
+		<parameter name="database">ORYZprot</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">ORYZprot_BestHit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTP_ORYZprot</parameter>
+	</program>
+	<program id="320" step="11" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoP_{database}</parameter> 
+		<parameter name="sourceTag">EXONERATE_BestHit_{database}</parameter>
+		<parameter name="database">ORYZprot</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTP_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+	</program>	
+
+	<program id="324" step="11" type="BestHit" sequence="protein.seq"> <!-- GFF= 11_EXONERATE_SETAprot.gff - EMBL: ExoP_SETAprot - GV: pSETAprot -->
+		<dependences>
+			<dependence id="208" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="database">SETAprot</parameter>
+		<parameter name="type">BLASTP</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="positive_threshold">0.35</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+		<parameter name="hitListFile">SETAprot_BestHit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="325" step="11" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="BestHit"/>
+		</dependences>
+		<parameter name="database">SETAprot</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">SETAprot_BestHit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTP_SETAprot</parameter>
+	</program>
+	<program id="326" step="11" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoP_{database}</parameter> 
+		<parameter name="sourceTag">EXONERATE_BestHit_{database}</parameter>
+		<parameter name="database">SETAprot</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTP_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+	</program>	
+
+	<program id="327" step="11" type="BestHit" sequence="protein.seq"> <!-- GFF= 11_EXONERATE_SORGprot.gff - EMBL: ExoP_SORGprot - GV: pSORGprot -->
+		<dependences>
+			<dependence id="208" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="database">SORGprot</parameter>
+		<parameter name="type">BLASTP</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="positive_threshold">0.35</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+		<parameter name="hitListFile">SORGprot_BestHit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="328" step="11" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="BestHit"/>
+		</dependences>
+		<parameter name="database">SORGprot</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">SORGprot_BestHit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTP_SORGprot</parameter>
+	</program>
+	<program id="329" step="11" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoP_{database}</parameter> 
+		<parameter name="sourceTag">EXONERATE_BestHit_{database}</parameter>
+		<parameter name="database">SORGprot</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTP_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+	</program>	
+
+	<program id="330" step="11" type="BestHit" sequence="protein.seq"> <!-- GFF= 11_EXONERATE_TRITprot.gff - EMBL: ExoP_TRITprot - GV: pTRITprot -->
+		<dependences>
+			<dependence id="208" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="database">TRITprot</parameter>
+		<parameter name="type">BLASTP</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="positive_threshold">0.35</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+		<parameter name="hitListFile">TRITprot_BestHit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="331" step="11" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="BestHit"/>
+		</dependences>
+		<parameter name="database">TRITprot</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">TRITprot_BestHit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTP_TRITprot</parameter>
+	</program>
+	<program id="332" step="11" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoP_{database}</parameter> <!-- ExoP_TRITprot -->
+		<parameter name="sourceTag">EXONERATE_BestHit_{database}</parameter>
+		<parameter name="database">TRITprot</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTP_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+	</program>	
+
+	<program id="333" step="11" type="BestHit" sequence="protein.seq"> <!-- GFF= 11_EXONERATE_ZEAMprot.gff - EMBL: ExoP_ZEAMprot - GV: pZEAMprot -->
+		<dependences>
+			<dependence id="208" type="FuncAnnot_IWGSC"/>
+		</dependences>
+		<parameter name="database">ZEAMprot</parameter>
+		<parameter name="type">BLASTP</parameter>
+		<parameter name="evalue">1e-1</parameter>
+		<parameter name="positive_threshold">0.35</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+		<parameter name="hitListFile">ZEAMprot_BestHit_list.txt</parameter>
+		<parameter name="nbCore">2</parameter> 
+	</program>
+	<program id="334" step="11" type="MinibankBuilder" sequence="initial">
+		<dependences>
+			<dependence id="above" type="BestHit"/>
+		</dependences>
+		<parameter name="database">ZEAMprot</parameter>
+		<parameter name="databaseType">protein</parameter>
+		<parameter name="hitListFile">ZEAMprot_BestHit_list.txt</parameter>
+		<parameter name="minibank_name">Mini_BLASTP_ZEAMprot</parameter>
+	</program>
+	<program id="335" step="11" type="Exonerate" sequence="TE_Nmask.seq">
+		<dependences>
+			<dependence id="above" type="MinibankBuilder"/>
+		</dependences>
+		<parameter name="EMBLRename.match_part">ExoP_{database}</parameter> 
+		<parameter name="sourceTag">EXONERATE_BestHit_{database}</parameter>
+		<parameter name="database">ZEAMprot</parameter>
+		<parameter name="queryType">protein</parameter>
+		<parameter name="model">protein2genome</parameter>
+		<parameter name="miniBankPrefix">Mini_BLASTP_</parameter>
+		<parameter name="bestn">1000</parameter>
+		<parameter name="score">1000</parameter>
+		<parameter name="percent">10</parameter>
+		<parameter name="coverageThreshold">0.50</parameter>
+	</program>	
+
+</analysis>

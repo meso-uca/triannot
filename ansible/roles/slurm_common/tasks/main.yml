@@ -1,0 +1,65 @@
+---
+
+- name: Copy munge key
+  copy:
+    src: munge.key
+    dest: /etc/munge/munge.key
+    owner: munge
+    group: munge
+    mode: 0600
+
+- name: Ensure munge service is started
+  service:
+    name: munge
+    state: started
+    enabled: yes
+
+- name: Create slurm user
+  user:
+    name: slurm
+    uid: 995
+    home: /var/empty/slurm
+    shell: /sbin/nologin
+    createhome: no
+
+- name: Create slurm directories
+  file:
+    dest: "{{ item }}"
+    owner: slurm
+    state: directory
+  with_items:
+    - /etc/slurm
+    - /var/log/slurm/
+    - /var/spool/slurm
+
+- name: Copy slurm.conf template
+  template:
+    src: slurm.conf.j2
+    dest: /etc/slurm/slurm.conf
+    owner: slurm
+    group: slurm 
+    mode: 0644
+
+- name: Copy cgroup conf
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/slurm/{{ item }}"
+    owner: slurm
+    group: slurm
+    mode: 0644
+  with_items:
+    - cgroup.conf
+
+- name: Create scratch directory
+  file:
+    dest: "{{ item }}"
+    owner: root
+    group: root
+    mode: 01777
+    state: directory
+  with_items:
+    - /storage/scratch
+
+- name: Disable SELinux
+  selinux:
+    state: disabled

@@ -1,0 +1,29 @@
+---
+
+- name: SELinux use_nfs_home_dirs
+  seboolean:
+    name: use_nfs_home_dirs
+    state: yes
+    persistent: yes
+
+- name: Mount home users (NFS)
+  mount:
+    path: /home/users/
+    state: mounted
+    src: "{{ master_name }}.oscarlocal:/exports/users"
+    fstype: nfs
+    opts: defaults,fsc
+
+- name: Install packages
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - slurm-slurmd
+
+- name: Ensure that slurmd service is started
+  service:
+    name: slurmd
+    enabled: yes
+    state: restarted
+

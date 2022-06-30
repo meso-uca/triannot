@@ -1,0 +1,154 @@
+---
+
+- name: Mount /dev/sdb
+  mount:
+    path: /exports/users
+    state: mounted
+    src: /dev/sdb
+    fstype: xfs
+    
+- name: Create directories
+  file:
+    dest: "{{ item }}"
+    owner: root
+    state: directory
+    mode: 0755
+  with_items:
+    - /exports/users
+    - /exports/users/opt
+
+- name: Mount bind /exports/users/opt on /opt
+  mount:
+    path: /opt
+    src: /exports/users/opt
+    opts: bind
+    state: mounted
+    fstype: none
+
+- name: Mount bind /exports/users on /home/users
+  mount:
+    path: /home/users/
+    src: /exports/users
+    opts: bind
+    state: mounted
+    fstype: none
+
+- name: Detect subnet CIDR
+  shell: "/sbin/ip route | grep src  | awk '{print $1}'"
+  register: cidroutput
+
+- name: Configure /etc/exports
+  lineinfile:
+    path: /etc/exports
+    line: "/exports/users {{cidroutput.stdout}}(rw,no_root_squash)"
+    state: present
+    mode: 0644
+    create: yes
+
+- name: Configure NFS to use more concurrent processes
+  lineinfile:
+    path: /etc/sysconfig/nfs
+    line: "RPCNFSDCOUNT={{ (ansible_processor_vcpus*1.5) | int}}"
+    regexp: "^[#]*RPCNFSDCOUNT="
+
+- name: Ensure rpcbind service is started
+  service:
+    name: rpcbind
+    state: restarted
+    enabled: yes
+
+- name: Ensure nfs-server service is started
+  service:
+    name: nfs-server
+    state: restarted
+    enabled: yes
+    
+- name: Install packages
+  package:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - slurm-slurmctld
+    - slurm-slurmdbd
+    - mariadb-server
+    - python2-PyMySQL
+    - MySQL-python
+
+- name: Ensure mariadb service
+  service:
+    name: mariadb
+    state: restarted
+    enabled: yes
+
+- name: Add mysql root user
+  mysql_user:
+      name: root
+      password: "mysql-cluster-admin"
+      check_implicit_admin: true
+      host: "{{ item }}"
+  with_items:
+      - "::1"
+      - "127.0.0.1"
+      - "localhost"
+
+- name: Copy mysql root conf template
+  template:
+    src: ".my.cnf.j2"
+    dest: "/root/.my.cnf"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Remove mysql empty user
+  mysql_user:
+    user: ""
+    state: absent
+
+- name: Remove mysql test db
+  mysql_db:
+    db: test
+    state: absent
+
+- name: Add mysql slurm_acct_db DB
+  mysql_db:
+    name: slurm_acct_db
+    state: present
+
+- name: Add mysql user slurm
+  mysql_user:
+    name: slurm
+    state: present
+    password: "mysql-cluster-admin"
+
+- name: Configure mysql user slurm
+  mysql_user:
+    name: slurm
+    password: "mysql-cluster-admin"
+    priv: "slurm_acct_db.*:ALL"
+    state: present
+
+- name: Copy slurmdbd.conf template
+  template:
+    src: slurmdbd.conf.j2
+    dest: /etc/slurm/slurmdbd.conf
+    owner: slurm
+    mode: 0600
+    backup: yes
+
+- name: Ensute slurmdbd service
+  service:
+    name: slurmdbd
+    state: restarted
+    enabled: yes
+
+- name: Ensure slurmctld service
+  service:
+    name: slurmctld
+    enabled: yes
+    state: restarted        
+
+- name: Add cluster (sacctmgr)
+  ignore_errors: yes
+  shell:
+    cmd: "sleep 2s && sacctmgr -i add cluster {{node_prefix}}"
+    warn: no

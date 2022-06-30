@@ -1,0 +1,133 @@
+---
+- name: Create additional users
+  user:
+    name: "{{ item.login }}"
+    home: "/home/users/{{ item.login }}"
+    uid: "{{ item.uid }}"
+    group: "users"
+    update_password: on_create
+  when: item.login != ""
+  with_items: "{{ users_list }}"
+
+- name: Add users to sudoers
+  lineinfile:
+    path: "/etc/sudoers.d/{{ item.login }}"
+    line: "{{ item.login }} ALL=(ALL) NOPASSWD:ALL"
+    state: present
+    mode: 0440
+    create: yes
+    validate: 'visudo -cf %s'
+  when: item.login != ""
+  with_items: "{{ users_list }}"
+
+- name: Set permissions on /home/users/shared
+  file:
+    path: "/home/users/shared"
+    owner: "centos"
+    group: "users"
+    state: directory
+    mode: "u=rwx,g=rwx,o=rx"
+
+- name: Add users ssh keys
+  lineinfile:
+    path: "/home/users/{{ item.login }}/.ssh/authorized_keys"
+    create: yes
+    line: "{{ item.key }}"
+    state: present
+    owner: "{{ item.login }}"
+    group: "users"
+    mode: "0600"
+  when: item.login != ""
+  with_items: "{{ users_list }}"
+
+- name: Set permission on ssh dir
+  file:
+    path: "/home/users/{{ item.login }}/.ssh" 
+    owner: "{{ item.login }}"
+    group: "users"
+    mode: "0700"
+  when: item.login != ""
+  with_items: "{{ users_list }}"
+
+- name: Add centos ssh keys
+  blockinfile:
+    path: /home/centos/.ssh/authorized_keys
+    create: yes
+    block: "{{ item.key }}"
+  when: item.login != ""
+  with_items: "{{ users_list }}"
+
+- name: Set owner on home
+  file:
+    path: "/home/users/{{ item.login }}" 
+    owner: "{{ item.login }}"
+    group: "users"
+    recurse: yes
+  when: item.login != ""
+  with_items: "{{ users_list }}"
+  
+- name: Add authorized keys file to AuthorizedKeysFile
+  lineinfile: 
+    dest=/etc/ssh/sshd_config
+    backup=True
+    backrefs=True
+    state=present
+    regexp='^(AuthorizedKeysFile(?!.*\b/home/users/{{ item.login }}/.ssh/authorized_keys\b).*)$'
+    line='\1 /home/users/{{ item.login }}/.ssh/authorized_keys'
+  when: item.login != ""
+  with_items: "{{ users_list }}"
+
+- name: Stop and Start ssh
+  service:
+    name: sshd
+    state: restarted
+####
+
+# - name: Create additional users (phleroy)
+#   user:
+#     name: "{{ item.login }}"
+#     uid:  "{{ item.uid }}"
+#     password: "{{ item.passwd }}"
+#     home: "/home/users/{{ item.login }}"
+#     group: "users"
+#     update_password: on_create
+#   with_items:
+#     - { login: 'phleroy',    uid: 1500, passwd: '$1$MESO$XNMCQOVMiMaWpry935nBE.' } # cluster-admin
+
+# - name: Add phleroy user to sudoers
+#   lineinfile:
+#     path: /etc/sudoers.d/phleroy
+#     line: 'phleroy ALL=(ALL) NOPASSWD:ALL'
+#     state: present
+#     mode: 0440
+#     create: yes
+#     validate: 'visudo -cf %s'
+
+# - name: Set permissions on /home/users/shared
+#   file:
+#     path: "/home/users/shared"
+#     owner: "phleroy"
+#     group: "users"
+#     state: directory
+#     mode: "u=rwx,g=rx,o=rx"
+
+# - name: Add phleroy ssh keys
+#   blockinfile:
+#     path: /home/users/phleroy/.ssh/authorized_keys
+#     create: yes
+#     block: |
+#       ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAror5kndWpiqKhVVDJcT9PbVOyPawOBi3hTGLgt8nkwcra35jWWFkWMaywNQVKkZc9lLtM6Qy9shGNbVxfQ/IJ3Ne2VlEnh0jGs8WQyDnqcIfjp+rXWE7JMfemeRZOYiJ5pM3hAfS9dzLDCCLzF3p8144UAtBPwqsSd8bzUNpZAjDtUlbSScSJdJQ8124zL4SSQRvcEG8c7Yu1rPfTIIovC4gDNYWxk2a04myCl6rN0V6tjFDzVlznGaAcRZjut7YHMbOthQVZl6g/ePRyD0sE9BjMyhUEgxgTETKEEnzSfYAVZsnV0IyYpkGMy3BkhGT9jXpe8N68fDfCrVakgG2iw== phleroy@inra
+#       ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAuZdeQ1Fe41kp20eZLoWrYc8TcRVUV6Es0+R64qZ72fuNq7MxtnSUo4d0Pn7ESjla4aI0rPMxDVWpI0oiQj9ESw7vx13/mGqagcl/WvjkYgrmAXj+xi/o87dpEFBis9AbdcwSSxTKD02pwPnU8IbdWoL58UmMBikrWh/ES2ZUKYWq5XiL8G+52jtD6US87QX2zHM/CJV1sTc63q6OVyhI354BpWVwdmpoOIpm0QNSa6L1RO9h4cLNLlbU+8oE00+hNU12mTu2QoGSVCTp0gYnVkiFRJ2fieyVnHt+kmw1lruBEAk+fRNgfqqL+l6dgSjtoDoPBn78huGMoTuPGkSEBQ== phleroy@sauron.versailles.inra.fr
+#       ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAIBsfMNBBAjR9uhNu5Ddf5J4Pd37W76I1R0yF1QooTipp/KTNephNarWdT+sW6lPbTW9bTXgLHLhZv9Jg/OCfBsxwwz7zwwwLH+fuRGaRY4SB76I3Al8ZdIUZ2RpQDPePDaPV6VxKHyUVFhGEoIUVBlI5Kzrrx5ixIelhyyltPAS5w== phleroy@inra
+#       ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDPLIJflPyb4pdwIiIoJrJ+43Rj6IAJWHvF1/uY1eWTQnYA4sH4fnpDSvhlvTH+bzh+b14XXAXkaaz68vCpuL81ABlzbLe6RfU3OIQLamXw5VqXz1p7QJ/uHHkRxc7NeZTryL7PoRD96zqUfm1DE5f/bx2iqO2rJsHQ+emJhWDwSLQfGSz/4tYcNmSdO723x3l9iaUttmIbPBGVz/6v6bOO3UTk0nl+SrHbyONIkiLiFlZ/I6vbknrN0aypFX7jS6uJ/IesL2OFQ/joIHVOGEbxa3D2AnfUi8S8Fl5uMsZqspgNXgK2U6e/I3vlhYY3RNEuFWU6oqWV/Jz8xpZaLDqV pleroy@genologin1
+#       ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAn3RQPyc9pPPZn4zYK0Y1TVJtsO9Ja0fUkrY6Jm3Ip81R7tLclKT7UvuEnQwHBFSHgFPEKTK4LmoP2uIFf8ydkLsMDV6PPePMwRVeEo5RUklII4GnnDmaGTzbGIFrR1VVpMDEAuxrn3r7C99HizhcXBD6XZ1GKnnUVIUirq6h+gTJ9dWI9Gj3BT30wzBWULyJMjnNFGQpCPTanUAUpZOBf8tPrf6PkLr1hXe57zO50GSa4QMlVWbFDeVn5CsCyHDxeNs/dE8ZQHaQ1ze9OoKm9zT8l7FJrowYCdRfH/iBRVezE+sP5wcHBmOo2vm5ElUusuKlC0wiuc3Ic6EU4FOzYQ== phleroy@hpcext01
+
+# - name: Add centos ssh keys
+#   blockinfile:
+#     path: /home/centos/.ssh/authorized_keys
+#     create: yes
+#     block: |
+#       ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCl8dT1M/hKJB1sAd9s6xUMAimBzpMX1Mx29jsBSmXUZ/UwBUXgOQK4vTNozqo7qcIEQ6JJSkzU8pswsEn20tpCJdPx09dHcJ6A0Kfx9McK4+j4ov6ooRoKNkbcMOdZc6Qd6+GuArfRp5RJUYrYZ4MQLCmDskjIMuqj3IuiixKk4gSsPwOWl57zk7JiFc1/C406P1vsA7PQs8I74PP4E9qH4EQUZeJvZP06ECqPGGA5uDqvtfzmolE1unHWlNGi18G1Hq7j8b34Dzr0OA0TQt5WF240VgbfuIm0DEjh/jMBKEIbeTJeXcrSPMtquG82roPQ5jPHUtIXtcUuwjUrVybp 
+#       ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQClKHuMEbWNMlXXWVz48Ra/BLGuaChea1mobBFkf7vnrf5cpsHSAJ7V9S/yLnM3YrViEQTsWNFeaD0IgZkR7MSZfpHEwdjzxu8xPuvOMZVRdz+GjairQP/kRQxlOOj+RYzQe7On/0wKrm/kw0cng96uYCtgW74Vf3wo9VHtdkLzXL7FjhFPMeloQHpxAblVnxt2nMSIqCOkD8DomIZFdXauYiO6QzkyDPVnU3jik80mJ4W4QqJRSgrXEtIPoZi2womr4/ND5uOMW37Ba/+8z4IHfR9bnPioT7y4EEAWY1D+qdpSqy9v2Sxm7mq3dnEsq8uTSWoKGQWKKSxR80W3IEu9
+#       ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDJg/XmZ+87oYaD07sygf3IitJqXjtXneH2JFk6qiPWke6mIxnZfhl8+FH3h8s51JwWqp+w3teNMflQI8Vbqzx6K/JkT22TFx4NdOI9c8st+YjvWJRnI15/aJTd599w8kq86Kr1dCpxHVFYY7/fkAMPe6iPb1EW9MaBfqHJSzlNALQL9WL+r4n1FWvPmqzG1dsrGsl+IaJrJacw6xH1x1F1Ytzq/VcvYDIqsMvR78ugFL3Z1H1h6d0ZQ4vrUt7ZueLPJBhE/TrChxq/8pf1AdEZgEUY6CA1g7c8M7ZjA/XW+thg5kuWKX24eWrCa1b1iI6rC9mK06iwiIlSxBEeuWSn 
+#       ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDSJtY5My2AQm5RWiUOD7KqRROiu8vdF0bCuJLMorA4z1ChN5GdbRg/vXQRmctajvw/Ls/aIdbvAuStjlrBMTnzHk+7WJEwi8kbhoHwhT1FCGwZfuDgz9BzF1BPNjRaAylcGqrvIADYDm5Q/xBnAKuCjKpYInOAPw7BU1Q6j9Qao19pMiOnLe6m/ZkXdYblDQEWkHrrAEgwEykzuKEvAx0M1TH2byOPPJaUBThK2yVx+R7rMaUgeCqtuc19U8KYl8+e0DbEJM++LSo4WuUcW+bfU/Ov8lHTOaRJjXHNddTNSt3dybj2u3cQVdD2EYWL/yFY8P44IWrn8zXQkyQatdel 

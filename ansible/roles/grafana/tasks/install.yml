@@ -1,0 +1,23 @@
+---
+
+- name: GRAFANA | Ensure grafana group
+  group:
+    name: "{{ grafana_group }}"
+
+- name: grafana | Ensure grafana user
+  user:
+    name: "{{ grafana_user }}"
+    group: "{{ grafana_group }}"
+    shell: /bin/bash
+
+- name: GRAFANA | Install grafana
+  yum:
+    name: "{{grafana_url}}"
+    state: present
+
+- name: Links grafana dir to /
+  file:
+    src: /etc/grafana
+    dest: /grafana
+    state: link
+    force: yes

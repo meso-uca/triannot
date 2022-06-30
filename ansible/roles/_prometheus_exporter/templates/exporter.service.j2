@@ -1,0 +1,19 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Prometheus {{ _prometheus_exporter_name }}
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=prometheus
+Group=prometheus
+Type=simple
+{% if _prometheus_exporter_env is defined -%}
+{% for key, value in _prometheus_exporter_env.items() -%}
+Environment={{ key }}={{value}}
+{% endfor %}
+{% endif -%}
+ExecStart=/usr/local/bin/{{ _prometheus_exporter_name }} {% if _prometheus_exporter_args is defined %}{{ _prometheus_exporter_args}}{% endif %} 
+
+[Install]
+WantedBy=multi-user.target

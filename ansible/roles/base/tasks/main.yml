@@ -1,0 +1,133 @@
+---
+
+- name: Add EPEL repository
+  yum_repository:
+    name: epel
+    description: EPEL YUM repo
+    baseurl: https://download.fedoraproject.org/pub/epel/$releasever/$basearch/
+    gpgcheck: no
+
+- name: Add Meso/Infra repository
+  yum_repository:
+    name: crri
+    description: crri
+    baseurl: http://mirror.dsi.uca.fr/infra/crri-el7-x86_64
+    gpgcheck: no
+
+- name: upgrade all packages
+  yum:
+    name: '*'
+    state: latest
+
+- name: Install packages
+  package:
+    state: present
+    name:
+        - redhat-lsb-core
+        - Lmod
+        - crri-lmod-base
+        - screen
+        - libsemanage-python
+        - yum-utils
+        - nfs-utils
+        - vim-enhanced
+        - nano
+        - dstat
+        - munge
+        - slurm
+        - python36
+        - python36-virtualenv
+        - python36-numpy
+        - python36-pip
+        - stress
+        - 'subversion'
+        - 'hwloc'
+        - 'tcsh'
+        - 'mlocate'
+        - 'htop'
+        - 'stress'
+        - 'fuse-sshfs'
+        - 'tmpwatch'
+        - 'ipmitool'
+        - 'mariadb'
+        - 'numactl'
+        - 'gcc'
+        - 'gcc-c++'
+        - 'gcc-gfortran'
+        - 'make'
+        - 'autoconf'
+        - 'automake'
+        - 'gdb'
+        - 'valgrind'
+        - 'gd-devel'
+        - 'expat-devel'
+        - 'libicu'
+        - 'tcl'
+        - 'tk'
+        - 'bzip2'
+        - 'unzip'
+        - 'dos2unix'
+        - 'rdma-core-devel'
+        - 'atlas'
+        - 'perl-local-lib'
+        - 'perl-File-Copy-Recursive'
+        - 'perl-Log-Log4perl'
+        - 'perl-Getopt-Long-Descriptive'
+        - 'perl-Tie-IxHash'
+        - 'perl-Clone'
+        - 'perl-IO-String'
+        - 'perl-YAML'
+        - 'perl-Module-Build'
+        - 'perl-parent'
+        - 'perl-GD'
+        - 'perl-Set-Scalar'
+        - 'perl-Time-HiRes'
+        - 'perl-Data-Dumper'
+        - 'gd'
+        - 'libpng12'
+        - 'perl-Data-Dumper-Names'
+        - 'perl-XML-SAX'
+        - 'perl-XML-SAX-Writer'
+        - 'perl-XML-Writer'
+        - 'perl-XML-Twig'
+        - 'perl-XML-Simple'
+        - 'perl-Parallel-ForkManager'
+        - 'perl-String-Random'
+        - 'perl-Sys-CPU'
+        - 'perl-Text-CSV_XS'
+        - 'perl-PerlIO-gzip'
+        - 'perl-Switch'
+        - 'perl-Text-Soundex'
+        - 'perl-Env'
+        - 'perl-Compress-LZF'
+        - 'SDL2-static'
+        - 'SDL2'
+        - 'gtk2'
+        - 'pcre2-utf16.x86_64'
+        - 'pcre2.x86_64'
+        - 'lua-devel'
+        - 'gmp-6.1.0'
+        - 'mpfr-3.1.3'
+        - 'java-oracle-1.7.0_79'
+        - 'java-oracle-1.8.0_45'
+        - 'libX11'
+        - 'libXext'
+        - 'libICE'
+        - 'libSM'
+        - 'libXt'
+        - 'libXmu'
+        - 'libXau'
+        - 'libxcb'
+        - 'wget'
+        - 'mesa-libGLU'
+        - 'libXmu-devel'
+        - 'libXaw-devel'
+        - 'gsl'
+        - 'armadillo'
+
+- name: Adapt file /etc/modulefiles/core/crri.lua
+  lineinfile:
+    dest: /etc/modulefiles/core/crri.lua
+    state: absent
+    regexp: load\(\"gcc\"\)
+    

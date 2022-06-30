@@ -1,0 +1,15 @@
+---
+
+- include_role:
+    name: _prometheus_exporter
+  vars:
+    _prometheus_exporter_name: node_exporter
+    _prometheus_exporter_github: prometheus/node_exporter
+    _prometheus_exporter_version: "{{ node_exporter_version }}"
+    _prometheus_exporter_sha256: "{{ node_exporter_sha256 }}"
+    _prometheus_exporter_port: 9100
+    _prometheus_exporter_args: "{{ node_exporter_args }}"
+    _prometheus_exporter_server: "{{ prometheus_server }}"
+    _prometheus_exporter_job: node
+  tags:
+    - prometheus

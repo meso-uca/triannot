@@ -1,0 +1,78 @@
+---
+
+- name: Install packages
+  package:
+    state: present
+    name:
+        - httpd 
+        - php 
+        - php-opcache 
+        - php-mysqlnd 
+        - php-pdo 
+        - php-gd 
+        - php-odbc 
+        - php-pear 
+        - php-xml 
+        - php-xmlrpc 
+        - php-mbstring 
+        - php-soap 
+        - curl 
+        - curl-devel
+
+- name: extract html src
+  ansible.builtin.unarchive:
+    remote_src: no
+    src: triannot2022-web.tar.gz
+    dest: /var/www/html
+    group: apache
+    owner: apache
+    list_files: no
+
+- name: start httpd
+  service:
+    name: httpd
+    state: restarted
+    enabled: yes
+
+- name: Add mysql user triannot2022
+  mysql_user:
+    name: triannot2022
+    state: present
+    password: "Tr14nn0t2022!"
+
+- name: Add mysql triannot2022 DB
+  mysql_db:
+    name: triannot2022
+    state: present
+
+- name: Configure mysql user slurm
+  mysql_user:
+    name: triannot2022
+    password: "Tr14nn0t2022!"
+    priv: "triannot2022.*:ALL"
+    state: present
+
+- name: copy sql file on host
+  copy:
+    src: triannot2022.sql
+    dest: /tmp
+
+- name: Restore database ignoring errors
+  ignore_errors: yes
+  mysql_db:
+    name: triannot2022
+    state: import
+    target: /tmp/triannot2022.sql
+
+- name: Create triannot step dir
+  copy:
+    src: "{{ item }}"
+    dest: /home/users/triannot/steps/
+    owner: triannot
+    group: users
+    mode: 0644
+    with_items:
+      - wheat_step220621_long.xml
+      - wheat_step220621_short.xml
+      - wheat_step220621_withFuncAnnot.xml 
+

@@ -1,0 +1,4 @@
+---
+- name: restart {{ _prometheus_exporter_name }} 
+  service: name={{ _prometheus_exporter_name }} state=restarted
+  when: ansible_service_mgr == "systemd"

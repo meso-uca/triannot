@@ -1,0 +1,138 @@
+---
+# Deploy a Prometheus exporter
+# Inspired by https://github.com/cloudalchemy/ansible-node-exporter
+- name: group for prometheus
+  notify: "restart {{ _prometheus_exporter_name }}"
+  group:
+    name: prometheus
+    gid: 421
+    system: true
+    state: present
+
+- name: user for prometheus
+  #  notify: "restart {{ _prometheus_exporter_name }}"
+  user:
+    name: prometheus
+    uid: 421
+    group: prometheus
+    shell: /sbin/nologin 
+    system: true
+    home: /var/lib/prometheus
+    state: present
+
+- name: create textfile collector dir
+  file:
+    path: "/var/lib/{{ _prometheus_exporter_name }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    recurse: true
+    mode: 0755
+
+- set_fact:
+    tarball_url: "{{ _prometheus_exporter_tarball_url }}"
+  when: _prometheus_exporter_tarball_url is defined
+
+- set_fact:
+    tarball_url: "https://github.com/{{ _prometheus_exporter_github }}/releases/download/v{{ _prometheus_exporter_version }}/{{ _prometheus_exporter_name }}-{{ _prometheus_exporter_version }}.linux-amd64.tar.gz"
+  when: _prometheus_exporter_tarball_url is undefined
+
+- name: download {{ _prometheus_exporter_name }}
+  get_url:
+    url: "{{ tarball_url }}"
+    dest: "/tmp/"
+    checksum: "sha256:{{ _prometheus_exporter_sha256 }}"
+  become: false
+  delegate_to: localhost
+  run_once: true
+  check_mode: no
+  register: download
+
+- name: unpack {{ _prometheus_exporter_name }} binary
+  become: false
+  unarchive:
+    src: "{{ download.dest }}"
+    dest: "/tmp"
+    extra_opts: [ "--strip-components= {{ 1 if _prometheus_exporter_tarball_strip | default(true) else 0 }}" ]
+    creates: "/tmp/{{ _prometheus_exporter_name }}"
+  delegate_to: localhost
+  run_once: true
+  check_mode: no
+
+- name: propagate {{ _prometheus_exporter_name }} binaries
+  notify: "restart {{ _prometheus_exporter_name }}"
+  copy:
+    src: "/tmp/{{ _prometheus_exporter_name }}"
+    dest: "/usr/local/bin/{{ _prometheus_exporter_name }}"
+    mode: 0755
+    owner: root
+    group: root
+
+- name: copy the {{ _prometheus_exporter_name }} systemd service file
+  notify: "restart {{ _prometheus_exporter_name }}"
+  template:
+    src: exporter.service.j2
+    dest: "/etc/systemd/system/{{ _prometheus_exporter_name }}.service"
+    owner: root
+    group: root
+    mode: 0644
+  register: exporter_service
+  when: ansible_service_mgr == "systemd"
+
+- name: reload systemd if necessary
+  systemd:
+    daemon_reload: true
+  when: exporter_service.changed 
+
+- name: install SElinux packages for ansible if needed
+  package:
+    state: present
+    name:
+      - libsemanage-python
+      - policycoreutils-python
+  when:
+    - ansible_version.full is version_compare('2.4', '>=')
+    - ansible_selinux.status == "enabled"
+
+- name: allow {{ _prometheus_exporter_name }} port in SELinux on RedHat OS family
+  seport:
+    ports: "{{ _prometheus_exporter_port }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+  when:
+    - ansible_version.full is version_compare('2.4', '>=')
+    - ansible_selinux.status == "enabled"
+
+- name: ensure {{ _prometheus_exporter_name }} service is enabled
+  notify: "restart {{ _prometheus_exporter_name }}"
+  service:
+    name: "{{ _prometheus_exporter_name }}"
+    enabled: yes
+  when: ansible_service_mgr == "systemd"
+
+## Register exporter in prometheus server
+
+- name: ensure {{ _prometheus_exporter_job }} target file exists in prometheus
+  delegate_to: "{{ _prometheus_exporter_server }}"
+  when:  (_prometheus_exporter_server is defined) and (_prometheus_exporter_server|length > 0)
+  become: yes
+  copy:
+    content: |
+      - targets:
+    dest: "/etc/prometheus/targets/{{ _prometheus_exporter_job }}.yml"
+    force: no
+    group: prometheus
+    owner: prometheus
+    mode: 0644
+
+- name: register {{ _prometheus_exporter_job }} target in prometheus
+  delegate_to: "{{ _prometheus_exporter_server }}"
+  when:  (_prometheus_exporter_server is defined) and (_prometheus_exporter_server|length > 0)
+  become: yes
+  lineinfile:
+    path: "/etc/prometheus/targets/{{ _prometheus_exporter_job }}.yml"
+    insertafter: "^- targets:" 
+    regexp: "{{ inventory_hostname_short }}"
+    line: "  - '{{ inventory_hostname_short }}:{{ _prometheus_exporter_port }}'"
+    state: present

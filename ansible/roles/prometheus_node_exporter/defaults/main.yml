@@ -1,0 +1,5 @@
+--- 
+node_exporter_version: 1.0.0 
+node_exporter_sha256: fae88be0aa33c8ae22340723f9b4a4e519e67d2969da7a27751e755db7e75788
+node_exporter_args: "--collector.systemd --collector.nfs"
+prometheus_server: "{{master_name}}"

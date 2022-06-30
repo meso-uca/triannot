@@ -1,0 +1,7 @@
+---
+prometheus_version: "2.24.1"
+prometheus_service: "prometheussrv"
+prometheus_user: "prometheussrv"
+prometheus_group: "prometheussrv"
+prometheus_install_path: "/usr/local/bin/"
+prometheus_exec_command: "/usr/local/bin/prometheus --config.file /etc/prometheus/prometheus.yml --storage.tsdb.path /var/lib/prometheus/ --web.console.templates=/etc/prometheus/consoles --web.console.libraries=/etc/prometheus/console_libraries --web.enable-lifecycle"

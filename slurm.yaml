@@ -1,0 +1,478 @@
+heat_template_version: 2018-08-31
+
+description: Template that installs a cluster of slurm servers.
+
+parameters:
+  base_name:
+    type: string
+    description: Cluster base name (lowercase)
+    constraints:
+      - allowed_pattern: "[a-z0-9]*"
+    default: tap
+
+  node_count:
+    description: Number of slurm nodes
+    type: number
+    default: 3
+
+  key_name:
+    type: string
+    description: Name of key-pair to be used
+    constraints:
+      - custom_constraint: nova.keypair
+
+  flavor_master:
+   type: string
+   default: 202 #c1.2xlarge
+   description: |
+     Choose an instance flavor for master
+   constraints:
+     - custom_constraint: nova.flavor
+
+  flavor_node:
+   type: string
+   default: 202 #c1.2xlarge
+   description: |
+     Choose an instance flavor for node
+   constraints:
+     - custom_constraint: nova.flavor
+  
+  image_id:
+    type: string
+    label: Server image
+    description: Choose centOS 7
+    default: f85e0272-8e27-43a4-be8c-9d997d067732
+    constraints:
+      - custom_constraint: glance.image
+      #- allowed_pattern: "[-a-zA-Z_0-9]*cent[oO][sS][-a-zA-Z_0-9]*"
+
+  image_default_login:
+    type: string
+    default: centos
+    label: Image default login
+  
+  master_data_volume_size:
+    type: number
+    default: 400
+    label: Master data volume size GB
+  
+  master_data_volume_type:
+    type: string
+    constraints:
+      - allowed_values: ["ceph-ssd", "standard"]
+
+  user1_name:
+    type: string
+    label: user1 name
+    description: User1 account name
+    default: ""
+    constraints:
+      - allowed_pattern: "[a-z]*"
+  
+  user1_key:
+    type: string
+    label: user1 ssh key
+    description: User1 ssh public key
+    default: ""
+
+  user2_name:
+    type: string
+    label: user2 name
+    description: User2 account name
+    default: ""
+    constraints:
+      - allowed_pattern: "[a-z]*"
+  
+  user2_key:
+    type: string
+    label: user2 ssh key
+    description: User2 ssh public key
+    default: ""
+
+  user3_name:
+    type: string
+    label: user3 name
+    description: User3 account name
+    default: ""
+    constraints:
+      - allowed_pattern: "[a-z]*"
+  
+  user3_key:
+    type: string
+    label: user3 ssh key
+    description: User3 ssh public key
+    default: ""
+
+  user4_name:
+    type: string
+    label: user4 name
+    description: User4 account name
+    default: ""
+    constraints:
+      - allowed_pattern: "[a-z]*"
+  
+  user4_key:
+    type: string
+    label: user4 ssh key
+    description: User4 ssh public key
+    default: ""
+  
+  user5_name:
+    type: string
+    label: user5 name
+    description: User5 account name
+    default: ""
+    constraints:
+      - allowed_pattern: "[a-z]*"
+  
+  user5_key:
+    type: string
+    label: user5 ssh key
+    description: User5 ssh public key
+    default: ""
+    
+
+resources:
+
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_handle }
+      count: { get_param: node_count }
+      timeout: 300
+  
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+
+  triannot_key:
+    properties:
+      name:
+        str_replace:
+          template:
+            $name-key-01
+          params:
+            $name: { get_param: base_name }
+      save_private_key: true
+    type: OS::Nova::KeyPair
+
+  master_data_volume:
+    type: OS::Cinder::Volume
+    properties:
+      size: { get_param: master_data_volume_size }
+      volume_type: { get_param: master_data_volume_type }
+
+  triannot_net:
+    type: OS::Neutron::Net
+    properties:
+      name:
+        str_replace:
+          template:
+            $name-network-public-01
+          params:
+            $name: { get_param: base_name }
+
+  triannot_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      name:
+        str_replace:
+          template:
+            $name-subnet-public-01
+          params:
+            $name: { get_param: base_name }
+      network_id: { get_resource: triannot_net }
+      cidr: 10.45.5.0/24
+      gateway_ip: 10.45.5.1
+      allocation_pools:
+        - {end: 10.45.5.54,start: 10.45.5.2}
+      enable_dhcp: true
+
+  triannot_router:
+    type: OS::Neutron::Router
+    properties:
+      name:
+        str_replace:
+          template:
+            $name-router-public-01
+          params:
+            $name: { get_param: base_name }
+      external_gateway_info:
+        network: provider-public-uca1
+        
+  triannot_router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: triannot_router }
+      subnet_id: { get_resource: triannot_subnet }
+
+  triannot_master_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name:
+        str_replace:
+          template:
+            $name-master-security-group-01
+          params:
+            $name: { get_param: base_name }
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 22
+          port_range_max: 22
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 80
+          port_range_max: 80
+
+  triannot_node_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name:
+        str_replace:
+          template:
+            $name-node-security-group-01
+          params:
+            $name: { get_param: base_name }
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 1
+          port_range_max: 65535
+        - protocol: udp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 1
+          port_range_max: 65535
+  
+  triannot_master_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: triannot_net }
+      security_groups:
+        - default
+        - { get_resource: triannot_master_security_group }
+  
+  triannot_node_port:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count:  {get_param: node_count}
+      resource_def:
+        type: OS::Neutron::Port
+        properties:
+          network_id: { get_resource: triannot_net }
+          security_groups:
+            - default
+            - { get_resource: triannot_node_security_group }
+          name:
+            str_replace:
+                  template:
+                    $name$index$port
+                  params:
+                    $name: triannot_node
+                    $index: "%index%"
+                    $port: _port
+  
+  triannot_cluster:
+    type: OS::Heat::ResourceGroup
+    depends_on: triannot_node_port
+    properties:
+      count: { get_param: node_count}
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          image: { get_param: image_id }
+          flavor: { get_param: flavor_node }
+          key_name: { get_param: key_name }
+          networks:
+            - port:
+                str_replace:
+                  template:
+                    $name$index$port
+                  params:
+                    $name: triannot_node
+                    $index: "%index%"
+                    $port: _port
+          user_data_format: RAW
+          user_data:
+            str_replace:
+              params:
+                wc_notify: { get_attr: ['wait_handle', 'curl_cli'] }
+                __public_key__: { get_attr: [ triannot_key, public_key ]  }
+                __private_key__: { get_attr: [ triannot_key, private_key ] }
+                __default_login__: { get_param: image_default_login}
+                __index__: "%index%"
+              template: |
+                #!/bin/bash
+                setenforce permissive #disable selinux
+                
+                DEFAULT_LOGIN_HOME=/home/"__default_login__"
+                echo "__public_key__" >> /home/"__default_login__"/.ssh/authorized_keys
+                echo "__private_key__" >> /home/"__default_login__"/.ssh/id_rsa
+                node_vcpus=$(cat /proc/cpuinfo | grep -i "^processor" | wc -l)
+                node_sockets=$(echo "$node_vcpus/2" | bc)
+                node_ram_kb=$(cat /proc/meminfo | grep -i "^MemTotal" | awk -F" " '{print $2}')
+                node_ram_mb_real=$(echo "$node_ram_kb/1024" | bc)
+                node_ram_mb=$(echo "1000*($node_ram_mb_real/1024-1)" | bc)
+
+                printf "node_ram_mb: %s\n" $node_ram_mb >> $DEFAULT_LOGIN_HOME/var.yml
+                printf "node_sockets: %s\n" $node_sockets >> $DEFAULT_LOGIN_HOME/var.yml
+
+                TIMEOUT=30    # number of iterations (5 minutes?)
+                while :; do 
+                  status=$(sudo -u "__default_login__" ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no 127.0.0.1 -p 22 echo ok 2>&1)
+                  RESULT=$?
+                  if [ $RESULT -eq 0 ]; then
+                      echo "__index__" >> test.txt
+                      wc_notify --data-binary '{"status": "SUCCESS", "id": "__index__"}'
+                      break
+                  fi
+                  if [ $RESULT -eq 255 ]; then
+                      # connection refused also gets you here
+                      if [[ $status == *"Permission"* ]] ; then
+                          # permission denied indicates the ssh link is okay
+                          break
+                      fi
+                  fi
+                  TIMEOUT=$((TIMEOUT-1))
+                  if [ $TIMEOUT -eq 0 ]; then
+                      exit 1 
+                  fi
+                  sleep 10s
+                done
+
+          name:
+            str_replace:
+              template:
+                $name-$index
+              params:
+                $name: { get_param: base_name }
+                $index: "compute%index%"
+    
+  triannot_master:
+    type: OS::Nova::Server
+    depends_on: triannot_cluster
+    depends_on: triannot_master_port
+    depends_on: wait_condition
+    properties:
+      image: { get_param: image_id }
+      flavor: { get_param: flavor_master }
+      key_name: { get_param: key_name }
+      networks:
+        - port: { get_resource: triannot_master_port }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          params:
+            __private_key__: { get_attr: [ triannot_key, private_key ]  }
+            __public_key__: { get_attr: [ triannot_key,  public_key] }
+            __prefix__: { get_param: base_name }
+            __count__: {get_param: node_count}
+            __default_login__: { get_param: image_default_login}
+            __user1_name__: { get_param: user1_name }
+            __user1_key__: { get_param: user1_key }
+            __user2_name__: { get_param: user2_name }
+            __user2_key__: { get_param: user2_key }
+            __user3_name__: { get_param: user3_name }
+            __user3_key__: { get_param: user3_key }
+            __user4_name__: { get_param: user4_name }
+            __user4_key__: { get_param: user4_key }
+            __user5_name__: { get_param: user5_name }
+            __user5_key__: { get_param: user5_key }
+          template: |
+            #!/bin/bash
+
+            setenforce permissive #disable selinux
+            
+            DEFAULT_LOGIN_HOME=/home/"__default_login__"
+            touch $DEFAULT_LOGIN_HOME/logs.txt
+            LOGS=$DEFAULT_LOGIN_HOME/logs.txt
+
+            count="__count__"
+
+            echo "__public_key__" >>$DEFAULT_LOGIN_HOME/.ssh/authorized_keys
+            echo "__private_key__" >> $DEFAULT_LOGIN_HOME/.ssh/id_rsa
+            chown "__default_login__":"__default_login__" $DEFAULT_LOGIN_HOME/.ssh/id_rsa
+            chmod 0600 $DEFAULT_LOGIN_HOME/.ssh/id_rsa
+            cd $DEFAULT_LOGIN_HOME
+
+            if [ -b /dev/sdb ]; then
+              mkfs.xfs /dev/sdb >> $LOGS
+            fi
+
+            echo "__test__" >> $LOGS
+            echo "ansible git" >> $LOGS
+            git clone https://github.com/balbes15/ansible-triannot.git
+            echo "ansible git done" >> $LOGS
+             
+            sudo mv ansible-triannot/html /var/www/html
+
+            cd ansible-triannot/ansible
+            chown -R centos:centos $DEFAULT_LOGIN_HOME/ansible-triannot
+            pwd >> $LOGS
+            rm ./group_vars/all/slurm.yml
+            ls ./group_vars/all/ >> $LOGS
+
+            echo '  - { login: "__user1_name__", key: "__user1_key__", uid: 5001 }' >> ./group_vars/all/users.yml
+            echo '  - { login: "__user2_name__", key: "__user2_key__", uid: 5002 }' >> ./group_vars/all/users.yml
+            echo '  - { login: "__user3_name__", key: "__user3_key__", uid: 5003 }' >> ./group_vars/all/users.yml
+            echo '  - { login: "__user4_name__", key: "__user4_key__", uid: 5004 }' >> ./group_vars/all/users.yml
+            echo '  - { login: "__user5_name__", key: "__user5_key__", uid: 5005 }' >> ./group_vars/all/users.yml
+
+            cat <<EOF1 > hosts.ini
+            [NODES:vars]
+            ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+            [MASTER:vars]
+            ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+            [MASTER]
+            __prefix__-master ansible_connection=local
+
+            [NODES]
+            EOF1
+
+            node_prefix=$(printf "%s-compute" "__prefix__")
+            count_1=$(($count-1))
+            for i in `seq 0 $count_1`
+            do
+              node_name=$(printf "%s%d" $node_prefix $i)
+              echo "$node_name" >> hosts.ini
+              if [ $i -eq 0 ]; then
+                  sudo -u "__default_login__" scp -oStrictHostKeyChecking=no "__default_login__"@$node_name:$DEFAULT_LOGIN_HOME/var.yml ./group_vars/all/slurm.yml >> $LOGS
+                  echo node_prefix: "__prefix__"-compute >> ./group_vars/all/slurm.yml
+                  echo master_name: "__prefix__"-master >> ./group_vars/all/slurm.yml
+                  echo "node_max: $count_1" >> ./group_vars/all/slurm.yml
+              fi
+            done
+
+            export ANSIBLE_HOST_KEY_CHECKING=False
+            sudo -u "__default_login__" ansible-playbook -i hosts.ini deploy.yml >> $LOGS
+      name: 
+        str_replace:
+          template:
+            $name-master
+          params:
+            $name: { get_param: base_name }
+
+  volume_att:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: triannot_master }
+      volume_id: { get_resource: master_data_volume }
+      mountpoint: /dev/sdb
+
+  floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: provider-public-uca1
+  
+  floating_ip_assoc:
+    type: OS::Neutron::FloatingIPAssociation
+    depends_on: triannot_master
+    properties:
+      floatingip_id: { get_resource: floating_ip }
+      port_id: { get_resource: triannot_master_port }
+  
+outputs:
+    public_ip:
+      description: The public IP address of this slurm cluster.
+      value: { get_attr: [triannot_master, addresses] }

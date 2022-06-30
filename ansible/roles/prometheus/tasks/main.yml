@@ -1,0 +1,129 @@
+---
+- name: Creating prometheus user group
+  group: 
+    name: "{{ prometheus_group }}"
+    gid: 422
+    system: true
+
+- name: Creating prometheus user
+  user:
+    name: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    uid: 422
+    system: true
+    shell: "/sbin/nologin"
+    createhome: no
+    state: present
+
+- name: Creates /var/lib/prometheus directory
+  file:
+    path: "/var/lib/prometheus/"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: 0755
+
+- name: Creates /etc/prometheus directory
+  file:
+    path: "/etc/prometheus/"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: 0755
+
+- name : get installed version
+  shell: "{{ prometheus_install_path }}/prometheus --version 2>&1 | head -n 1 | sed 's/^.*version \\([0-9\\.]*\\) .*$/\\1/'"
+  register: _prometheus_installed_version
+  changed_when: false
+
+# BLOCK Install/Update
+- block:
+  - name: Download prometheus file for version {{ prometheus_version }}
+    get_url:
+      url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+      dest: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+    become: false
+    delegate_to: localhost
+    run_once: true
+  
+  - name: unpack prometheus {{ prometheus_version }}
+    become: false
+    unarchive:
+      src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz"
+      dest: "/tmp"
+      creates: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64"
+    delegate_to: localhost
+    run_once: true
+  
+  - name: Copy prometheus {{ prometheus_version }} binaries to {{ prometheus_install_path }}
+    notify:
+      - "restart_{{ prometheus_service }}"
+    copy:
+      src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/prometheus"
+      dest: "{{ prometheus_install_path }}"
+      owner: "{{ prometheus_user }}"
+      group: "{{ prometheus_group }}"
+      mode: 0755
+  
+  - name: Copy promtool {{ prometheus_version }} binaries to {{ prometheus_install_path }}
+    copy:
+      src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/promtool"
+      dest: "{{ prometheus_install_path }}"
+      owner: "{{ prometheus_user }}"
+      group: "{{ prometheus_group }}"
+      mode: 0755
+
+  - name: Copy prometheus console file to /etc/prometheus
+    copy:
+      src: "/tmp/prometheus-{{ prometheus_version }}.linux-amd64/{{ item }}"
+      dest: "/etc/prometheus"
+      owner: "{{ prometheus_user }}"
+      group: "{{ prometheus_group }}"
+      mode: 0755
+    with_items:
+      ['consoles', 'console_libraries']
+
+  when: prometheus_version != _prometheus_installed_version.stdout
+# EOB Install/Update
+
+- name: Creates rules directory inside /etc/prometheus
+  file:
+    path: "/etc/prometheus/rules"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: 0755
+
+- name: Creates targets directory inside /etc/prometheus
+  file:
+    path: "/etc/prometheus/targets"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: 0755
+
+- name: Copy config file
+  template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    owner: root
+    group: "{{ prometheus_group }}"
+    mode: "0644"
+    force: no
+
+- name: Copy systemd init file
+  notify:
+    - reload_systemd
+    - "restart_{{ prometheus_service }}"
+  template:
+    src: prometheus.service.j2
+    dest: "/etc/systemd/system/{{ prometheus_service }}.service"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Start prometheus service
+  service:
+    name: "{{ prometheus_service }}"
+    state: started
+    enabled: yes

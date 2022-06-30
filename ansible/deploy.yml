@@ -1,0 +1,31 @@
+---
+
+- hosts: all 
+  become: yes
+  gather_facts: yes
+  roles:    
+    - { role: base, tags: ['base'] }
+    - { role: slurm_common, tags: ['slurm_common'] }
+
+- hosts: MASTER
+  become: yes
+  gather_facts: yes
+  roles:
+    - { role: slurm_master, tags: ['slurm_master'] }
+    - { role: prometheus, tags: ['prometheus'] }
+    - { role: grafana, tags: ['grafana'] }
+
+- hosts: NODES
+  become: yes
+  gather_facts: yes
+  roles:
+    - { role: slurm_node, tags: ['slurm_node'] }
+
+- hosts: all
+  become: yes
+  gather_facts: yes
+  roles:
+    - { role: triannot, tags: ['triannot'] }
+    - { role: additional_users, tags: ['additional_users'] }
+    - { role: prometheus_node_exporter, tags: ['prometheus_node_exporter'] }
+
