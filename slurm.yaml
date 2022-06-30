@@ -400,13 +400,11 @@ resources:
 
             echo "__test__" >> $LOGS
             echo "ansible git" >> $LOGS
-            git clone https://github.com/balbes15/ansible-triannot.git
+            git clone https://github.com/meso-uca/triannot.git #https://github.com/balbes15/ansible-triannot.git
             echo "ansible git done" >> $LOGS
-             
-            sudo mv ansible-triannot/html /var/www/html
 
-            cd ansible-triannot/ansible
-            chown -R centos:centos $DEFAULT_LOGIN_HOME/ansible-triannot
+            cd triannot/ansible
+            chown -R centos:centos $DEFAULT_LOGIN_HOME/triannot
             pwd >> $LOGS
             rm ./group_vars/all/slurm.yml
             ls ./group_vars/all/ >> $LOGS
