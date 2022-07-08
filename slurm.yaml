@@ -134,14 +134,23 @@ parameters:
 
 resources:
 
-  wait_condition:
+  wait_ssh:
     type: OS::Heat::WaitCondition
     properties:
-      handle: { get_resource: wait_handle }
+      handle: { get_resource: wait_ssh_handle }
       count: { get_param: node_count }
       timeout: 300
   
-  wait_handle:
+  wait_ssh_handle:
+    type: OS::Heat::WaitConditionHandle
+  
+  wait_ansible:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_ansible_handle }
+      timeout: 20000
+  
+   wait_ansible_handle:
     type: OS::Heat::WaitConditionHandle
 
   triannot_key:
@@ -295,7 +304,7 @@ resources:
           user_data:
             str_replace:
               params:
-                wc_notify: { get_attr: ['wait_handle', 'curl_cli'] }
+                wc_notify: { get_attr: ['wait_ssh_handle', 'curl_cli'] }
                 __public_key__: { get_attr: [ triannot_key, public_key ]  }
                 __private_key__: { get_attr: [ triannot_key, private_key ] }
                 __default_login__: { get_param: image_default_login}
@@ -351,7 +360,7 @@ resources:
     type: OS::Nova::Server
     depends_on: triannot_cluster
     depends_on: triannot_master_port
-    depends_on: wait_condition
+    depends_on: wait_ssh
     properties:
       image: { get_param: image_id }
       flavor: { get_param: flavor_master }
@@ -362,6 +371,7 @@ resources:
       user_data:
         str_replace:
           params:
+            wc_notify: { get_attr: ['wait_ansible_handle', 'curl_cli'] }
             __private_key__: { get_attr: [ triannot_key, private_key ]  }
             __public_key__: { get_attr: [ triannot_key,  public_key] }
             __prefix__: { get_param: base_name }
@@ -443,6 +453,7 @@ resources:
 
             export ANSIBLE_HOST_KEY_CHECKING=False
             sudo -u "__default_login__" ansible-playbook -i hosts.ini deploy.yml >> $LOGS
+            wc_notify --data-binary '{"status": "SUCCESS", "id": 0}'
       name: 
         str_replace:
           template:
