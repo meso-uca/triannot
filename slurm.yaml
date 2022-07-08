@@ -150,7 +150,7 @@ resources:
       handle: { get_resource: wait_ansible_handle }
       timeout: 20000
   
-   wait_ansible_handle:
+  wait_ansible_handle:
     type: OS::Heat::WaitConditionHandle
 
   triannot_key:

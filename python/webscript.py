@@ -5,7 +5,7 @@ import glob
 import os, sys, shutil, subprocess, psutil
 from lxml import etree
 
-__NBNODES__ = 8
+__NBNODES__ = os.cpu_count()
 
 def mariadbconnection():
     try:

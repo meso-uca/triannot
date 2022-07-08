@@ -27,6 +27,11 @@
   roles:
     - { role: triannot, tags: ['triannot'] }
     - { role: additional_users, tags: ['additional_users'] }
-    - { role: web, tags: ['web' ]}
     - { role: prometheus_node_exporter, tags: ['prometheus_node_exporter'] }
+
+- hosts: MASTER
+  become: yes
+  gather_facts: yes
+  roles:
+    - { role: web, tags: ['web'] }
 

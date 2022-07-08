@@ -20,13 +20,14 @@
         - curl-devel
 
 - name: Install mariadb python package
-  ansible.builtin.pip:
+  pip:
+    state: present
     name: 
         - mariadb
-        - tarfile
         - glob2
         - lxml
         - psutil
+    executable: pip3.6
 
 - name: extract html src
   ansible.builtin.unarchive:
@@ -80,9 +81,9 @@
     owner: triannot
     group: users
     mode: 0644
-    with_items:
-      - wheat_step220621_long.xml
-      - wheat_step220621_short.xml
-      - wheat_step220621_withFuncAnnot.xml 
+  with_items:
+    - wheat_step220621_long.xml
+    - wheat_step220621_short.xml
+    - wheat_step220621_withFuncAnnot.xml 
 
 
