@@ -19,7 +19,7 @@
         - curl 
         - curl-devel
 
-- name: Install mariadb python package
+- name: Install mariadb, glob2, lxml and psutil python packages
   pip:
     state: present
     name: 

@@ -5,6 +5,7 @@
   gather_facts: yes
   roles:    
     - { role: base, tags: ['base'] }
+    - { role: additional_users, tags: ['additional_users'] }
     - { role: slurm_common, tags: ['slurm_common'] }
 
 - hosts: MASTER
@@ -12,6 +13,7 @@
   gather_facts: yes
   roles:
     - { role: slurm_master, tags: ['slurm_master'] }
+    - { role: web, tags: ['web'] }
     - { role: prometheus, tags: ['prometheus'] }
     - { role: grafana, tags: ['grafana'] }
 
@@ -26,12 +28,6 @@
   gather_facts: yes
   roles:
     - { role: triannot, tags: ['triannot'] }
-    - { role: additional_users, tags: ['additional_users'] }
     - { role: prometheus_node_exporter, tags: ['prometheus_node_exporter'] }
-
-- hosts: MASTER
-  become: yes
-  gather_facts: yes
-  roles:
-    - { role: web, tags: ['web'] }
+    
 
