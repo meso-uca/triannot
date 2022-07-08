@@ -1,4 +1,4 @@
 ---
 
 users_list:
-  - { login: "triannot" , key: "" }
+  - { login: "triannot" , key: "", uid: 5000 }

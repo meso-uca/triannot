@@ -398,9 +398,8 @@ resources:
               mkfs.xfs /dev/sdb >> $LOGS
             fi
 
-            echo "__test__" >> $LOGS
             echo "ansible git" >> $LOGS
-            git clone https://github.com/meso-uca/triannot.git #https://github.com/balbes15/ansible-triannot.git
+            git clone https://github.com/meso-uca/triannot.git
             echo "ansible git done" >> $LOGS
 
             cd triannot/ansible

@@ -19,6 +19,15 @@
         - curl 
         - curl-devel
 
+- name: Install mariadb python package
+  ansible.builtin.pip:
+    name: 
+        - mariadb
+        - tarfile
+        - glob2
+        - lxml
+        - psutil
+
 - name: extract html src
   ansible.builtin.unarchive:
     remote_src: no
@@ -75,4 +84,5 @@
       - wheat_step220621_long.xml
       - wheat_step220621_short.xml
       - wheat_step220621_withFuncAnnot.xml 
+
 
