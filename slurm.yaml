@@ -393,8 +393,8 @@ resources:
             #####################################################################################
             # Python mariadb dependance
             # TODO: use ansible
-            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
-            sudo yum -y install MariaDB-devel
+            # curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
+            # sudo yum -y install MariaDB-devel
             #####################################################################################
 
             setenforce permissive #disable selinux

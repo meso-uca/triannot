@@ -1,4 +1,4 @@
-import mariadb
+import pymysql
 import tarfile
 import time
 import glob
@@ -9,7 +9,7 @@ __NBNODES__ = os.cpu_count()
 
 def mariadbconnection():
     try:
-        conn = mariadb.connect(
+        conn = pymysql.connect(
             user="triannot2022",
             password="Tr14nn0t2022!",
             host="127.0.0.1",
@@ -23,22 +23,22 @@ def mariadbconnection():
         sys.exit(1)
 
 def getprocess_by_statut(cur, statut = 0):
-    cur.execute("SELECT * FROM t_request_req WHERE req_statut=?", (statut,))
+    cur.execute("SELECT * FROM t_request_req WHERE req_statut=%s", statut)
     process = list(cur)
     return process
 
 def gettypemol(cur, id_):
-    cur.execute("SELECT tmo_libelle FROM tr_typemol_tmo WHERE tmo_id=?", (id_,))
+    cur.execute("SELECT tmo_libelle FROM tr_typemol_tmo WHERE tmo_id=%s", id_)
     for libelle in cur:
         return libelle[0]
 
 def getanalyse(cur, id_):
-    cur.execute("SELECT ana_libelle FROM tr_analyse_ana WHERE ana_id=?", (id_,))
+    cur.execute("SELECT ana_libelle FROM tr_analyse_ana WHERE ana_id=%s", id_)
     for libelle in cur:
         return libelle[0]
 
 def getlogin(cur, id_):
-    cur.execute("SELECT ana_libelle FROM tr_analyse_ana WHERE ana_id=?", (id_,))
+    cur.execute("SELECT ana_libelle FROM tr_analyse_ana WHERE ana_id=%s", id_)
     for libelle in cur:
         return libelle[0]
 
@@ -54,7 +54,7 @@ def startprocess(req_code, req_sequences, req_ana, req_tmo, req_min_size, req_ma
     return triannotProcess
         
 def change_job_statut(cur, statut, job_id):
-    return cur.execute("UPDATE t_request_req SET req_statut=? WHERE req_id=?", (statut,job_id))
+    return cur.execute("UPDATE t_request_req SET req_statut=%s WHERE req_id=%s", (statut,job_id))
 
 def setprogress(cur, req_code):
     pwd = f"/home/users/triannot/run/{req_code}/Anno/"
@@ -70,7 +70,7 @@ def setprogress(cur, req_code):
             continue
 
     completion = (completion/(100*i))*100 if i > 0 else 0
-    cur.execute("UPDATE t_request_req SET req_progress=? WHERE req_code=?", (int(completion), req_code))
+    cur.execute("UPDATE t_request_req SET req_progress=%s WHERE req_code=%s", (int(completion), req_code))
 
 def archive(req_code, phpWorkDir):
     source_dir = f"/home/users/triannot/run/{req_code}/"

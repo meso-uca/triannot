@@ -1,4 +1,3 @@
 ---
-triannot_package: TriAnnotPackage-Wheat-v6.3
 triannot_package_file: "{{triannot_package}}.tar.xz"
 triannot_package_url: "http://mirror.dsi.uca.fr/infra/files/TriAnnot/Package/Wheat/v6.3/{{triannot_package_file}}"

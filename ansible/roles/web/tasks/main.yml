@@ -23,10 +23,10 @@
   pip:
     state: present
     name: 
-        - mariadb
         - glob2
         - lxml
         - psutil
+        - pymysql
     executable: pip3.6
 
 - name: extract html src
@@ -84,6 +84,19 @@
   with_items:
     - wheat_step220621_long.xml
     - wheat_step220621_short.xml
-    - wheat_step220621_withFuncAnnot.xml 
+    - wheat_step220621_withFuncAnnot.xml
+
+- name: copy webscript
+  copy:
+    src: webscript.py
+    dest: /home/users/triannot
+
+- name: Install web cron
+  cron:
+    name: Webscript
+    user: triannot
+    job: "source /opt/{{ triannot_package }}/init.sh; python3 /home/users/triannot/webscript.py 1> /tmp/webscript.log 2>&1"
+
+
 
 
