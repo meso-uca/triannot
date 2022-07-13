@@ -390,6 +390,13 @@ resources:
           template: |
             #!/bin/bash
 
+            #####################################################################################
+            # Python mariadb dependance
+            # TODO: use ansible
+            curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
+            sudo yum -y install MariaDB-devel
+            #####################################################################################
+
             setenforce permissive #disable selinux
             
             DEFAULT_LOGIN_HOME=/home/"__default_login__"
