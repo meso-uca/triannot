@@ -144,14 +144,14 @@ resources:
   wait_ssh_handle:
     type: OS::Heat::WaitConditionHandle
   
-  wait_ansible:
-    type: OS::Heat::WaitCondition
-    properties:
-      handle: { get_resource: wait_ansible_handle }
-      timeout: 20000
+  # wait_ansible:
+  #   type: OS::Heat::WaitCondition
+  #   properties:
+  #     handle: { get_resource: wait_ansible_handle }
+  #     timeout: 20000
   
-  wait_ansible_handle:
-    type: OS::Heat::WaitConditionHandle
+  # wait_ansible_handle:
+  #   type: OS::Heat::WaitConditionHandle
 
   triannot_key:
     properties:
@@ -371,7 +371,7 @@ resources:
       user_data:
         str_replace:
           params:
-            wc_notify: { get_attr: ['wait_ansible_handle', 'curl_cli'] }
+            # wc_notify: { get_attr: ['wait_ansible_handle', 'curl_cli'] }
             __private_key__: { get_attr: [ triannot_key, private_key ]  }
             __public_key__: { get_attr: [ triannot_key,  public_key] }
             __prefix__: { get_param: base_name }
@@ -460,7 +460,7 @@ resources:
 
             export ANSIBLE_HOST_KEY_CHECKING=False
             sudo -u "__default_login__" ansible-playbook -i hosts.ini deploy.yml >> $LOGS
-            wc_notify --data-binary '{"status": "SUCCESS", "id": 0}'
+            # wc_notify --data-binary '{"status": "SUCCESS", "id": 0}'
       name: 
         str_replace:
           template:

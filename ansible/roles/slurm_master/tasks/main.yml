@@ -139,16 +139,16 @@
   service:
     name: slurmdbd
     state: restarted
-    enabled: yes
-
-- name: Ensure slurmctld service
-  service:
-    name: slurmctld
-    enabled: yes
-    state: restarted        
+    enabled: yes    
 
 - name: Add cluster (sacctmgr)
   ignore_errors: yes
   shell:
     cmd: "sleep 2s && sacctmgr -i add cluster {{node_prefix}}"
     warn: no
+
+- name: Ensure slurmctld service
+  service:
+    name: slurmctld
+    enabled: yes
+    state: restarted    
