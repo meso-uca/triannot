@@ -97,6 +97,10 @@
     user: triannot
     job: "source /opt/{{ triannot_package }}/init.sh; python3 /home/users/triannot/webscript.py 1> /tmp/webscript.log 2>&1"
 
+- name: change php upload max size
+  copy:
+    src: php.ini
+    dest: /etc/php.ini
 
 
 
