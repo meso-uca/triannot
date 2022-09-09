@@ -9,60 +9,60 @@
 - name: Exec ldconfig
   command: ldconfig
 
-- name: Check if the file /opt/{{ triannot_package_file }} already exists
-  register: TriAnnotPackagetargz_exists
-  stat:
-    get_checksum: no
-    path: /opt/{{ triannot_package_file }}
-  delegate_to: localhost
-  run_once: true
+# - name: Check if the file /opt/{{ triannot_package_file }} already exists
+#   register: TriAnnotPackagetargz_exists
+#   stat:
+#     get_checksum: no
+#     path: /opt/{{ triannot_package_file }}
+#   delegate_to: localhost
+#   run_once: true
 
-- name: Download and propagate TriAnnot
-  when: not TriAnnotPackagetargz_exists.stat.exists
-  block:
-    - name: Download {{ triannot_package_file }}      
-      register: DownloadedTriAnnotPackagetargz
-      get_url:
-        url: "{{ triannot_package_url }}"
-        dest: /opt/{{ triannot_package_file }}
-        force: no
-        mode: '0666'
-        tmp_dest: /opt/
-      delegate_to: localhost
-      run_once: true
+# - name: Download and propagate TriAnnot
+#   when: not TriAnnotPackagetargz_exists.stat.exists
+#   block:
+#     - name: Download {{ triannot_package_file }}      
+#       register: DownloadedTriAnnotPackagetargz
+#       get_url:
+#         url: "{{ triannot_package_url }}"
+#         dest: /opt/{{ triannot_package_file }}
+#         force: no
+#         mode: '0666'
+#         tmp_dest: /opt/
+#       delegate_to: localhost
+#       run_once: true
 
-    - name: Propagate {{ triannot_package_file }} on nodes
-      when: DownloadedTriAnnotPackagetargz.status_code == 200
-      copy:
-        src: "/opt/{{ triannot_package_file }}"
-        dest: "/opt/{{ triannot_package_file }}"
-        force: no
-        mode: 0666
+#     - name: Propagate {{ triannot_package_file }} on nodes
+#       when: DownloadedTriAnnotPackagetargz.status_code == 200
+#       copy:
+#         src: "/opt/{{ triannot_package_file }}"
+#         dest: "/opt/{{ triannot_package_file }}"
+#         force: no
+#         mode: 0666
 
-- name: Check if directory /opt/{{ triannot_package }} already exists
-  register: TriAnnotPackage_exists
-  stat:
-    get_checksum: no
-    path: /opt/{{ triannot_package }}
+# - name: Check if directory /opt/{{ triannot_package }} already exists
+#   register: TriAnnotPackage_exists
+#   stat:
+#     get_checksum: no
+#     path: /opt/{{ triannot_package }}
 
-- name: Install TriAnnot
-  when: not TriAnnotPackage_exists.stat.exists
-  block:
-    - name: Extract {{ triannot_package_file }} to /opt/
-      register: TriAnnotPackage_extracted
-      ansible.builtin.unarchive:
-        remote_src: yes
-        src: /opt/{{ triannot_package_file }}
-        dest: /opt/
-        group: users
-        list_files: no
+# - name: Install TriAnnot
+#   when: not TriAnnotPackage_exists.stat.exists
+#   block:
+#     - name: Extract {{ triannot_package_file }} to /opt/
+#       register: TriAnnotPackage_extracted
+#       ansible.builtin.unarchive:
+#         remote_src: yes
+#         src: /opt/{{ triannot_package_file }}
+#         dest: /opt/
+#         group: users
+#         list_files: no
 
-    - name: Rename /opt/TriAnnotPackage to /opt/{{ triannot_package }}
-      ignore_errors: yes
-      when: not TriAnnotPackage_extracted.failed
-      command:
-        cmd: mv /opt/TriAnnotPackage /opt/{{ triannot_package }}
-        warn: no
+#     - name: Rename /opt/TriAnnotPackage to /opt/{{ triannot_package }}
+#       ignore_errors: yes
+#       when: not TriAnnotPackage_extracted.failed
+#       command:
+#         cmd: mv /opt/TriAnnotPackage /opt/{{ triannot_package }}
+#         warn: no
 
 - name: Set permissions on /opt/{{ triannot_package }}
   file:
