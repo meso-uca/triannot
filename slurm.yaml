@@ -167,7 +167,7 @@ resources:
   master_data_volume:
     type: OS::Cinder::Volume
     properties:
-      snapshot_id: 455a67d0-ebad-406c-bc4d-95dcde9982d7
+      #snapshot_id: 455a67d0-ebad-406c-bc4d-95dcde9982d7
       size: { get_param: master_data_volume_size }
       volume_type: { get_param: master_data_volume_type }
 

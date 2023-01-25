@@ -22,6 +22,24 @@ def mariadbconnection():
         print("Error connecting to MariaDB Platform: "+str(e))
         sys.exit(1)
 
+def updatestepdb(cur):
+    stepfiles = glob.glob('/home/users/triannot/steps/*.xml')
+    cur.execute("select ana_libelle from tr_analyse_ana")
+    anafiles = [item[0] for item in list(cur)]
+    cur.execute("select ana_id from tr_analyse_ana")
+    anaids = [item[0] for item in list(cur) ]
+    anaidmax = max(anaids)
+    stepfilenames = []
+    for stepfile in stepfiles:
+        stepfilename = stepfile.split('/')[-1][:-4]
+        stepfilenames.append(stepfilename)
+        if stepfilename not in anafiles:
+            anaidmax += 1
+            cur.execute("INSERT INTO `tr_analyse_ana` (ana_id,ana_libelle) VALUES (%s,%s)", (str(anaidmax), stepfilename))
+    for anafile in anafiles:
+        if anafile not in stepfilenames:
+            cur.execute("DELETE FROM `tr_analyse_ana` WHERE ana_libelle=%s", anafile)
+
 def getprocess_by_statut(cur, statut = 0):
     cur.execute("SELECT * FROM t_request_req WHERE req_statut=%s", statut)
     process = list(cur)
