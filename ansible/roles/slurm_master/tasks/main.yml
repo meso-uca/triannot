@@ -4,7 +4,7 @@
   mount:
     path: /exports/users
     state: mounted
-    src: /dev/sdb
+    src: /dev/vdb
     fstype: xfs
     
 - name: Create directories

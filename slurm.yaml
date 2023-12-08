@@ -414,8 +414,8 @@ resources:
             chmod 0600 $DEFAULT_LOGIN_HOME/.ssh/id_rsa
             cd $DEFAULT_LOGIN_HOME
 
-            if [ -b /dev/sdb ]; then
-              mkfs.xfs /dev/sdb >> $LOGS
+            if [ -b /dev/vdb ]; then
+              mkfs.xfs /dev/vdb >> $LOGS
             fi
 
             echo "ansible git" >> $LOGS
@@ -476,7 +476,7 @@ resources:
     properties:
       instance_uuid: { get_resource: triannot_master }
       volume_id: { get_resource: master_data_volume }
-      mountpoint: /dev/sdb
+      mountpoint: /dev/vdb
 
   floating_ip:
     type: OS::Neutron::FloatingIP
